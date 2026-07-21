@@ -1,0 +1,6 @@
+# 不想上传的文件夹 - 整个文件夹及其所有内容都会被忽略
+.env
+__pycache__/
+*.pyc
+.vscode/
+.clinerules/
