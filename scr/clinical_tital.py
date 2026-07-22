@@ -138,3 +138,78 @@ Downloading clinical_Pan-cancer.May2022.tsv.gz: 100%|█████████
     'Survival status (1, dead; 0, alive)'
 ]
 """
+
+for col in [
+    "tumor_stage_pathological",
+    "pathologic_staging_primary_tumor_pt",
+    "pathologic_staging_regional_lymph_nodes_pn",
+    "histologic_grade",
+    "histologic_type",
+]:
+    print("=" * 60)
+    print(col)
+    print(clin[col].value_counts(dropna=False))   # dropna=False 让 NaN 也现形
+
+"""
+============================================================
+tumor_stage_pathological
+tumor_stage_pathological
+Stage II                                44
+Stage I                                 41
+Stage III                               21
+Staging is not applicable or unknown     3
+Stage IV                                 1
+Name: count, dtype: int64
+============================================================
+pathologic_staging_primary_tumor_pt
+pathologic_staging_primary_tumor_pt
+pT2a    42
+pT3     16
+pT2b    15
+pT1b     8
+pT2      6
+3        5
+pT1a     4
+pT1c     4
+NaN      3
+pT4      2
+pT1      2
+pT3A     1
+2b       1
+T1b      1
+Name: count, dtype: int64
+============================================================
+pathologic_staging_regional_lymph_nodes_pn
+pathologic_staging_regional_lymph_nodes_pn
+pN0    65
+pN1    16
+pN2    15
+0       4
+pNX     3
+NaN     3
+1       2
+N1      1
+N0      1
+Name: count, dtype: int64
+============================================================
+histologic_grade
+histologic_grade
+G2 Moderately differentiated                                         58
+G3 Poorly differentiated                                             48
+GX Grading is not applicable, cannot be assessed or not specified     3
+G1 Well differentiated                                                1
+Name: count, dtype: int64
+============================================================
+histologic_type
+histologic_type
+Squamous cell carcinoma                                             71
+Keratinizing squamous cell carcinoma                                18
+Non-keratinizing squamous cell carcinoma                            14
+Basaloid squamous cell carcinoma                                     2
+Adenosquamous carcinoma                                              1
+Adenosquamous Carcinoma; at least 66% squamous component             1
+Solid adenocarcinoma                                                 1
+Spindle cell carcinoma with undifferentiated non small carcinoma     1
+adenosquamous carcinoma                                              1
+Name: count, dtype: int64
+"""
