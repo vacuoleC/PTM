@@ -5,3 +5,8 @@ __pycache__/
 .vscode/
 .clinerules/
 MiniMaxMCP/
+
+*.yml
+config.yml
+
+whatwedo.md

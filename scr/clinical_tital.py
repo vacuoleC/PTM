@@ -6,7 +6,7 @@ clin = lscc.get_clinical("mssm")
 print(clin.shape)
 
 # 先把所有列名打出来看全貌
-print(list(clin.columns))
+# print(list(clin.columns))
 
 """
 Downloading clinical_Pan-cancer.May2022.tsv.gz: 100%|█████████████████████████████████████████████████████████████| 243k/243k [00:04<00:00, 56.9kB/s]
@@ -139,16 +139,16 @@ Downloading clinical_Pan-cancer.May2022.tsv.gz: 100%|█████████
 ]
 """
 
-for col in [
-    "tumor_stage_pathological",
-    "pathologic_staging_primary_tumor_pt",
-    "pathologic_staging_regional_lymph_nodes_pn",
-    "histologic_grade",
-    "histologic_type",
-]:
-    print("=" * 60)
-    print(col)
-    print(clin[col].value_counts(dropna=False))   # dropna=False 让 NaN 也现形
+# for col in [
+#     "tumor_stage_pathological",
+#     "pathologic_staging_primary_tumor_pt",
+#     "pathologic_staging_regional_lymph_nodes_pn",
+#     "histologic_grade",
+#     "histologic_type",
+# ]:
+#     print("=" * 60)
+#     print(col)
+#     print(clin[col].value_counts(dropna=False))   # dropna=False 让 NaN 也现形
 
 """
 ============================================================
@@ -213,3 +213,15 @@ Spindle cell carcinoma with undifferentiated non small carcinoma     1
 adenosquamous carcinoma                                              1
 Name: count, dtype: int64
 """
+
+# 主候选:grade G2 vs G3
+g = clin["histologic_grade"]
+g2g3 = g[g.str.startswith(("G2", "G3"), na=False)]
+print("grade G2 vs G3:")
+print(g2g3.str[:2].value_counts())   # 只取 G2/G3 前两字，看最终二分类计数
+
+# 备胎:stage 早 vs 晚
+s = clin["tumor_stage_pathological"]
+early = s.isin(["Stage I", "Stage II"]).sum()
+late  = s.isin(["Stage III", "Stage IV"]).sum()
+print(f"\nstage 早(I+II)={early}  晚(III+IV)={late}")
