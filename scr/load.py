@@ -23,3 +23,11 @@ print(cptac.get_cancer_options())
 # 2. 加载 LSCC。
 #    首次实例化会去 Zenodo 拉数据,文件较大;失败就重跑。
 lscc = cptac.Lscc()
+
+ph = lscc.get_phosphoproteomics("umich")
+
+ # 有行有列 = 数据真下来了         
+print(ph.shape)
+
+# 打得出 .N 样本 = 正常样本约定成立
+print([s for s in ph.index.astype(str) if s.endswith(".N")][:5])   
