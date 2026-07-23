@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
+from sklearn.metrics import average_precision_score
 from sklearn.model_selection import (
     GroupKFold,
     StratifiedGroupKFold,
-    cross_validate,
     learning_curve,
 )
+from sklearn.pipeline import Pipeline
 
 from project_config import CONFIG, configured_path, configured_template_path
 from run_floor import load_phase0_data, make_xgboost_pipeline
@@ -22,20 +24,42 @@ def fixed_group_splits(X, y, groups):
     return list(cv.split(X, y, groups))
 
 
-def score_xgboost(X, y, splits):
-    """在给定划分上计算主指标的每折分数。"""
+def prepare_folds(X, splits):
+    """在每个训练折内拟合一次与标签无关的预处理步骤。"""
 
-    primary_metric = CONFIG["model"]["primary_metric"]
-    scores = cross_validate(
-        estimator=make_xgboost_pipeline(),
-        X=X,
-        y=y,
-        cv=splits,
-        scoring=primary_metric,
-        return_train_score=False,
-        error_score="raise",
-    )
-    return scores["test_score"]
+    template = make_xgboost_pipeline()
+    preprocessing = Pipeline(template.steps[:-1])
+    prepared = []
+
+    for train_index, test_index in splits:
+        transformer = clone(preprocessing)
+        prepared.append(
+            {
+                "train_index": train_index,
+                "test_index": test_index,
+                "X_train": transformer.fit_transform(X.iloc[train_index]),
+                "X_test": transformer.transform(X.iloc[test_index]),
+            }
+        )
+
+    return prepared
+
+
+def score_xgboost(prepared_folds, y):
+    """在已隔离的训练/测试折上计算 XGBoost 的每折 AUPRC。"""
+
+    template_head = make_xgboost_pipeline().named_steps["head"]
+    scores = []
+
+    for fold in prepared_folds:
+        model = clone(template_head)
+        model.fit(fold["X_train"], y.iloc[fold["train_index"]])
+        probability = model.predict_proba(fold["X_test"])[:, 1]
+        scores.append(
+            average_precision_score(y.iloc[fold["test_index"]], probability)
+        )
+
+    return np.asarray(scores)
 
 
 def permute_labels(y, rng):
@@ -64,8 +88,9 @@ def run_null_for_cohort(cohort_name):
     phase0_config = CONFIG["phase0"]
     X, y, groups = load_phase0_data(cohort_name)
     splits = fixed_group_splits(X, y, groups)
+    prepared_folds = prepare_folds(X, splits)
 
-    observed_scores = score_xgboost(X, y, splits)
+    observed_scores = score_xgboost(prepared_folds, y)
     observed_mean = observed_scores.mean()
     print(f"{cohort_name} 观察到的 {CONFIG['model']['primary_metric']}：{observed_mean:.4f}")
 
@@ -74,7 +99,7 @@ def run_null_for_cohort(cohort_name):
     n_permutations = phase0_config["null_permutations"]
 
     for permutation in range(n_permutations):
-        null_scores = score_xgboost(X, permute_labels(y, rng), splits)
+        null_scores = score_xgboost(prepared_folds, permute_labels(y, rng))
         null_rows.append(
             {
                 "permutation": permutation,
@@ -162,7 +187,7 @@ def run_ucec_repeated_cv():
             random_state=CONFIG["phase0"]["null_random_seed"] + repeat,
         )
         splits = list(cv.split(X, y, groups))
-        scores = score_xgboost(X, y, splits)
+        scores = score_xgboost(prepare_folds(X, splits), y)
         rows.extend(
             {"repeat": repeat, "fold": fold, "average_precision": score}
             for fold, score in enumerate(scores)
