@@ -47,6 +47,14 @@ model:
   scoring: [average_precision, matthews_corrcoef, balanced_accuracy, f1]
   primary_metric: average_precision
 
+  xgboost:
+    objective: binary:logistic
+    n_estimators: 200
+    max_depth: 4
+    eval_metric: logloss
+    random_state: 0
+    n_jobs: 1
+
 clinical:
   cohort: LSCC
   grade_column: histologic_grade
@@ -55,11 +63,3 @@ clinical:
   early_stages: [Stage I, Stage II]
   late_stages: [Stage III, Stage IV]
   focus_columns: [histologic_grade, tumor_stage_pathological]
-
-  xgboost:
-    objective: binary:logistic
-    n_estimators: 200
-    max_depth: 4
-    eval_metric: logloss
-    random_state: 0
-    n_jobs: 1
