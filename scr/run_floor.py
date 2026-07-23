@@ -13,10 +13,10 @@ from xgboost import XGBClassifier
 
 from transformers import DetectionFilter, MedianImputer
 
-def load_phase0_data():
+def load_phase0_data(cohort_name=None):
     """读取配置指定队列的残差矩阵、肿瘤标签，并构造病人分组。"""
 
-    cohort_name = CONFIG["datasets"]["matrix_cohort"]
+    cohort_name = cohort_name or CONFIG["datasets"]["matrix_cohort"]
     artifact_cohort = cohort_name.lower()
 
     X = pd.read_pickle(
