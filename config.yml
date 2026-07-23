@@ -15,6 +15,8 @@ paths:
   phase0_learning_curve_template: outputs/{cohort}_phase0_xgboost_learning_curve.csv
   hard_task_label_audit: outputs/hard_task_label_audit.csv
   hard_task_labels_template: outputs/{task}_labels.csv
+  hard_task_scores_template: outputs/{task}_{feature_set}_xgboost_scores.csv
+  hard_task_summary_template: outputs/{task}_xgboost_summary.csv
 
 cptac:
   omics_source: umich
@@ -96,3 +98,8 @@ hard_task:
     label_prefix_map:
       G2: moderately_differentiated
       G3: poorly_differentiated
+  feature_sets:
+    phosphoproteome:
+      modifications: [phosphorylation]
+    multi_ptm:
+      modifications: [phosphorylation, acetylation]
