@@ -211,7 +211,19 @@ def stoich_resid(ptm, protein, min_n=10):
 
     print(f"因有效样本少于 {min_n} 而跳过的位点数：{skipped}")
     return result
-            
+
+
+def report_detection_rate(df, label):
+    """仅报告每个位点的非缺失比例，不在这里删除任何位点。"""
+
+    detection_rate = df.notna().mean(axis=0)
+
+    print(f"\n{label}残差矩阵的检测率摘要：")
+    print(detection_rate.describe())
+
+    for threshold in [0.1, 0.5, 0.8]:
+        count = (detection_rate >= threshold).sum()
+        print(f"检测率 ≥ {threshold:.0%} 的位点数：{count}")
 
 
 def main() -> None:
@@ -274,6 +286,7 @@ def main() -> None:
 
     # 11. 对所有 PTM 位点做：PTM 丰度 ~ 母蛋白丰度，并返回残差矩阵。
     ph_resid = stoich_resid(ph, pr)
+    report_detection_rate(ph_resid, "磷酸化")
 
     print("磷酸化残差矩阵形状：", ph_resid.shape)
     print("残差矩阵缺失值比例：", ph_resid.isna().mean().mean())
