@@ -11,6 +11,7 @@ Phase 0 入口:加载 CPTAC 数据。
 
 import cptac
 from cptac_setup import configure_cptac
+from project_config import CONFIG, get_cohort_class
 
 
 configure_cptac()
@@ -24,11 +25,12 @@ configure_cptac()
 print(cptac.get_cancer_options())
 
 
-# 2. 加载 LSCC。
+# 2. 加载配置指定的探索队列。
 #    首次实例化会去 Zenodo 拉数据,文件较大;失败就重跑。
-lscc = cptac.Lscc()
+cohort_name = CONFIG["datasets"]["exploration_cohort"]
+cohort = get_cohort_class(cptac, cohort_name)()
 
-ph = lscc.get_phosphoproteomics("umich")
+ph = cohort.get_phosphoproteomics(CONFIG["cptac"]["omics_source"])
 
  # 有行有列 = 数据真下来了
 print(ph.shape)
