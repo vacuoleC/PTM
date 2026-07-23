@@ -163,7 +163,16 @@ def residual_for_one_site(ptm, protein, feature):
     print(f"测试位点：{gene} {site}")
     print(f"有效样本数：{valid.sum()}")
     print(f"回归方程：PTM = {intercept:.4f} + {slope:.4f} × 母蛋白")
-    print(f"残差与母蛋白的相关系数：{np.corrcoef(residual[valid], x_valid)[0, 1]:.6f}")
+    residual_valid = residual[valid]
+    residual_centered = residual_valid - residual_valid.mean()
+    protein_centered = x_valid - x_valid.mean()
+    correlation = (
+        (residual_centered * protein_centered).sum()
+        / np.sqrt(
+            (residual_centered**2).sum() * (protein_centered**2).sum()
+        )
+    )
+    print(f"残差与母蛋白的相关系数：{correlation:.6f}")
 
     return pd.Series(residual, index=ptm.index, name=feature)
 
