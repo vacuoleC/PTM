@@ -41,6 +41,18 @@ def configured_path(name: str) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
+def configured_template_path(name: str, **values: str) -> Path:
+    """解析 ``paths`` 中带占位符的路径模板。"""
+    try:
+        template = CONFIG["paths"][name]
+        configured = template.format(**values)
+    except KeyError as error:
+        raise KeyError(f"config.yml 中缺少 paths.{name} 或模板参数 {error}") from error
+
+    path = Path(configured)
+    return path if path.is_absolute() else PROJECT_ROOT / path
+
+
 def get_cohort_class(cptac_module: Any, cohort_name: str):
     """按配置中的 CPTAC 类名取得癌种类。"""
     try:
