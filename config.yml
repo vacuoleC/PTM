@@ -54,3 +54,10 @@ clinical:
   early_stages: [Stage I, Stage II]
   late_stages: [Stage III, Stage IV]
   focus_columns: [histologic_grade, tumor_stage_pathological]
+
+  xgboost:
+    n_estimators: 200
+    max_depth: 4
+    eval_metric: logloss
+    random_state: 0
+    
