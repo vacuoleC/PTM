@@ -64,7 +64,8 @@ def make_linear_pipeline():
             ("impute", MedianImputer()),
             ("scale", StandardScaler()),
             ("pca", PCA(
-                n_components=model_config["pca_components"]
+                n_components=model_config["pca_components"],
+                svd_solver=model_config["pca_svd_solver"],
             )),
             ("head", LogisticRegression(
                 max_iter=model_config["logistic_max_iterations"],
