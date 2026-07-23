@@ -81,6 +81,7 @@ clinical:
   focus_columns: [histologic_grade, tumor_stage_pathological]
 
 hard_task:
+  cv_parallel_jobs: 4
   candidate_clinical_columns:
     - histologic_grade
     - tumor_stage_pathological
