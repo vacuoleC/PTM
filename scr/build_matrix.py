@@ -96,6 +96,18 @@ def collapse_duplicate_features(df, label):
     return collapsed
 
 
+def report_parent_protein_coverage(ptm, protein, label):
+    """统计 PTM 位点中有多少能匹配到同名母蛋白。"""
+    ptm_genes = ptm.columns.get_level_values("Name")
+    protein_genes = set(protein.columns.astype(str))
+
+    matched = ptm_genes.isin(protein_genes)
+
+    print(f"{label}母蛋白匹配率：{matched.sum()} / {len(matched)} = {matched.mean():.2%}")
+
+    return matched
+
+
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
@@ -136,6 +148,10 @@ def main() -> None:
     pr = collapse_duplicate_features(pr, "蛋白组")
 
     print("合并重复特征后的形状：", ph.shape, ac.shape, pr.shape)
+
+    # 8. 检查母蛋白匹配率。
+    ph_match = report_parent_protein_coverage(ph, pr, "磷酸化")
+    ac_match = report_parent_protein_coverage(ac, pr, "乙酰化")
 
 
 if __name__ == "__main__":
