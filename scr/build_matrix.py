@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import cptac
 import pandas as pd
+import numpy as np
 from cptac.utils import reduce_multiindex
 
 from cptac_setup import configure_cptac
@@ -121,6 +122,43 @@ def keep_parent_matched_sites(ptm, matched, label):
     return result
 
 
+def residual_for_one_site(ptm, protein, feature):
+    """对一个 PTM 位点做：PTM 丰度 ~ 母蛋白丰度，并返回残差。"""
+
+    gene, site = feature
+
+    # 该PTM位点在212位病人中的丰度
+    y = ptm.loc[:, feature].to_numpy(dtype=float)
+
+    # 该PTM位点对应的母蛋白在212位病人中的丰度
+    x = protein.loc[:, gene].to_numpy(dtype=float)
+
+    # 拟合线性回归模型
+    valid = np.isfinite(x) & np.isfinite(y)
+    x_valid = x[valid]
+    y_valid = y[valid]
+
+    assert valid.sum() >= 10
+
+    x_mean = x_valid.mean()
+    y_mean = y_valid.mean()
+
+    denominator = ((x_valid - x_mean) ** 2).sum()
+    slope = ((x_valid - x_mean) * (y_valid - y_mean)).sum() / denominator
+    intercept = y_mean - slope * x_mean
+
+    residual = np.full(y.shape, np.nan)
+    residual[valid] = y_valid - (slope * x_valid + intercept)
+
+    print(f"测试位点：{gene} {site}")
+    print(f"有效样本数：{valid.sum()}")
+    print(f"回归方程：PTM = {intercept:.4f} + {slope:.4f} × 母蛋白")
+    print(f"残差与母蛋白的相关系数：{np.corrcoef(residual[valid], x_valid)[0, 1]:.6f}")
+
+    return pd.Series(residual, index=ptm.index, name=feature)
+
+
+
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
@@ -171,6 +209,13 @@ def main() -> None:
     ac = keep_parent_matched_sites(ac, ac_match, "乙酰化")
 
     print("匹配母蛋白后的形状：", ph.shape, ac.shape, pr.shape)
+
+
+    # 10. 对每个 PTM 位点做：PTM 丰度 ~ 母蛋白丰度，并返回残差。
+    test_feature = ph.columns[0]
+    test_residual = residual_for_one_site(ph, pr, test_feature)
+
+    print(test_residual.head())
 
 
 if __name__ == "__main__":
