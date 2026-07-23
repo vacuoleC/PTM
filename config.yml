@@ -24,7 +24,7 @@ datasets:
     LUAD: Luad
     UCEC: Ucec
   exploration_cohort: LSCC
-  matrix_cohort: LSCC
+  matrix_cohort: LUAD
   coverage_cohorts: [LSCC, LUAD, UCEC]
   focus_cohorts: [LUAD, UCEC]
 
