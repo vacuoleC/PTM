@@ -226,6 +226,23 @@ def report_detection_rate(df, label):
         print(f"检测率 ≥ {threshold:.0%} 的位点数：{count}")
 
 
+def add_modification_level(df, modification):
+    """给 PTM 特征列增加修饰类型层级。"""
+
+    new_columns = pd.MultiIndex.from_arrays(
+        [
+            [modification] * df.shape[1],
+            df.columns.get_level_values("Name"),
+            df.columns.get_level_values("Site"),
+        ],
+        names=["Modification", "Name", "Site"],
+    )
+
+    result = df.copy()
+    result.columns = new_columns
+    return result
+
+
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
@@ -297,6 +314,19 @@ def main() -> None:
     print("乙酰化残差矩阵缺失值比例：", ac_resid.isna().mean().mean())
 
     report_detection_rate(ac_resid, "乙酰化")
+
+    # 12. 将残差矩阵的列名增加修饰类型层级。
+    ph_resid = add_modification_level(ph_resid, "phosphorylation")
+    ac_resid = add_modification_level(ac_resid, "acetylation")
+
+    multi_ptm_resid = pd.concat([ph_resid, ac_resid], axis=1)
+
+    assert ph_resid.index.equals(ac_resid.index)
+    assert multi_ptm_resid.columns.duplicated().sum() == 0
+
+    print("多类 PTM 残差矩阵形状：", multi_ptm_resid.shape)
+    print("列层级：", multi_ptm_resid.columns.names)
+    print("前 3 个特征：", multi_ptm_resid.columns[:3])
 
 
 if __name__ == "__main__":
