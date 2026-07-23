@@ -8,6 +8,7 @@ paths:
   coverage_matrix: outputs/coverage_matrix.csv
   lscc_residual_matrix: outputs/lscc_multi_ptm_resid.pkl.gz
   lscc_tumor_normal_labels: outputs/lscc_tumor_normal_labels.csv
+  lscc_floor_linear_scores: outputs/lscc_floor_linear_scores.csv
 
 cptac:
   omics_source: umich
@@ -40,6 +41,10 @@ model:
   cv_splits: 5
   logistic_max_iterations: 2000
   logistic_class_weight: balanced
+  logistic_solver: liblinear
+  pca_components: 30
+  scoring: [average_precision, matthews_corrcoef, balanced_accuracy, f1]
+  primary_metric: average_precision
 
 clinical:
   cohort: LSCC
