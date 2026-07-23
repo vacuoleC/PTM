@@ -13,6 +13,8 @@ paths:
   phase0_null_scores_template: outputs/{cohort}_phase0_xgboost_null_scores.csv
   phase0_null_summary: outputs/phase0_xgboost_null_summary.csv
   phase0_learning_curve_template: outputs/{cohort}_phase0_xgboost_learning_curve.csv
+  hard_task_label_audit: outputs/hard_task_label_audit.csv
+  hard_task_labels_template: outputs/{task}_labels.csv
 
 cptac:
   omics_source: umich
@@ -75,3 +77,22 @@ clinical:
   early_stages: [Stage I, Stage II]
   late_stages: [Stage III, Stage IV]
   focus_columns: [histologic_grade, tumor_stage_pathological]
+
+hard_task:
+  candidate_clinical_columns:
+    - histologic_grade
+    - tumor_stage_pathological
+    - histologic_type
+    - pathologic_staging_primary_tumor_pt
+    - pathologic_staging_regional_lymph_nodes_pn
+  candidate_minimum_labeled_samples: 30
+  candidate_minimum_class_size: 5
+  candidate_maximum_classes: 6
+  primary:
+    task_name: lscc_grade_g2_vs_g3
+    cohort: LSCC
+    label_source: clinical
+    label_column: histologic_grade
+    label_prefix_map:
+      G2: moderately_differentiated
+      G3: poorly_differentiated
