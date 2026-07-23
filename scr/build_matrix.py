@@ -12,7 +12,12 @@ import numpy as np
 from cptac.utils import reduce_multiindex
 
 from cptac_setup import configure_cptac
-from project_config import CONFIG, configured_path, get_cohort_class
+from project_config import (
+    CONFIG,
+    configured_path,
+    configured_template_path,
+    get_cohort_class,
+)
 
 
 SOURCE = CONFIG["cptac"]["omics_source"]
@@ -266,14 +271,21 @@ def make_tumor_labels(sample_index):
     return labels
 
 
-def save_phase0_artifacts(matrix, labels):
-    """保存 Phase 0 的输入矩阵和样本标签。"""
+def save_phase0_artifacts(matrix, labels, cohort_name):
+    """保存配置指定队列的 Phase 0 输入矩阵和样本标签。"""
 
     output_dir = configured_path("output_dir")
     output_dir.mkdir(exist_ok=True)
 
-    matrix_path = configured_path("lscc_residual_matrix")
-    labels_path = configured_path("lscc_tumor_normal_labels")
+    artifact_cohort = cohort_name.lower()
+    matrix_path = configured_template_path(
+        "residual_matrix_template",
+        cohort=artifact_cohort,
+    )
+    labels_path = configured_template_path(
+        "tumor_normal_labels_template",
+        cohort=artifact_cohort,
+    )
 
     # pickle 能完整保留 MultiIndex 列名；gzip 可以减小文件体积。
     matrix.to_pickle(matrix_path, compression="gzip")
@@ -377,7 +389,7 @@ def main() -> None:
     print("肿瘤样本数：", labels.sum())
     print("正常样本数：", (labels == 0).sum())
 
-    save_phase0_artifacts(multi_ptm_resid, labels)
+    save_phase0_artifacts(multi_ptm_resid, labels, cohort_name)
 
 
 if __name__ == "__main__":
