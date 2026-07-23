@@ -44,6 +44,7 @@ model:
   logistic_class_weight: balanced
   logistic_solver: liblinear
   pca_components: 30
+  pca_svd_solver: full
   scoring: [average_precision, matthews_corrcoef, balanced_accuracy, f1]
   primary_metric: average_precision
 
