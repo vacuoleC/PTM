@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from sklearn.base import clone
 from sklearn.metrics import average_precision_score
 from sklearn.model_selection import (
@@ -45,19 +46,26 @@ def prepare_folds(X, splits):
     return prepared
 
 
+def score_one_fold(fold, y, template_head):
+    """拟合一个已隔离的训练折，并返回测试折 AUPRC。"""
+
+    model = clone(template_head)
+    model.fit(fold["X_train"], y.iloc[fold["train_index"]])
+    probability = model.predict_proba(fold["X_test"])[:, 1]
+    return average_precision_score(y.iloc[fold["test_index"]], probability)
+
+
 def score_xgboost(prepared_folds, y):
-    """在已隔离的训练/测试折上计算 XGBoost 的每折 AUPRC。"""
+    """并行计算已隔离训练/测试折上的 XGBoost AUPRC。"""
 
     template_head = make_xgboost_pipeline().named_steps["head"]
-    scores = []
-
-    for fold in prepared_folds:
-        model = clone(template_head)
-        model.fit(fold["X_train"], y.iloc[fold["train_index"]])
-        probability = model.predict_proba(fold["X_test"])[:, 1]
-        scores.append(
-            average_precision_score(y.iloc[fold["test_index"]], probability)
-        )
+    scores = Parallel(
+        n_jobs=CONFIG["phase0"]["null_parallel_jobs"],
+        prefer="threads",
+    )(
+        delayed(score_one_fold)(fold, y, template_head)
+        for fold in prepared_folds
+    )
 
     return np.asarray(scores)
 
