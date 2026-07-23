@@ -2,11 +2,17 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from project_config import CONFIG
+
 class DetectionFilter(BaseEstimator, TransformerMixin):
     """只保留训练集中检测率达到阈值的特征"""
 
-    def __init__(self, min_detection=0.5):
-        self.min_detection = min_detection
+    def __init__(self, min_detection=None):
+        self.min_detection = (
+            CONFIG["model"]["detection_minimum"]
+            if min_detection is None
+            else min_detection
+        )
 
     def fit(self, X, y=None):
         frame = pd.DataFrame(X)
