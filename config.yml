@@ -9,6 +9,7 @@ paths:
   lscc_residual_matrix: outputs/lscc_multi_ptm_resid.pkl.gz
   lscc_tumor_normal_labels: outputs/lscc_tumor_normal_labels.csv
   lscc_floor_linear_scores: outputs/lscc_floor_linear_scores.csv
+  lscc_floor_xgboost_scores: outputs/lscc_floor_xgboost_scores.csv
 
 cptac:
   omics_source: umich
@@ -56,8 +57,9 @@ clinical:
   focus_columns: [histologic_grade, tumor_stage_pathological]
 
   xgboost:
+    objective: binary:logistic
     n_estimators: 200
     max_depth: 4
     eval_metric: logloss
     random_state: 0
-    
+    n_jobs: 1

@@ -9,6 +9,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GroupKFold, cross_validate
 
+from xgboost import XGBClassifier
+
 from transformers import DetectionFilter, MedianImputer
 
 def load_phase0_data():
