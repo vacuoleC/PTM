@@ -43,6 +43,7 @@ phase0:
   null_permutations: 100
   null_random_seed: 0
   null_progress_every: 10
+  null_parallel_jobs: 4
   ucec_cv_repeats: 10
   learning_curve_train_sizes: [0.25, 0.5, 0.75, 1.0]
 
@@ -58,7 +59,7 @@ model:
   primary_metric: average_precision
 
   xgboost:
-    device: cuda
+    device: cpu
     objective: binary:logistic
     n_estimators: 200
     max_depth: 4
