@@ -1,7 +1,7 @@
 from __future__ import annotations
 import re
 import pandas as pd
-from project_config import CONFIG, configured_path
+from project_config import CONFIG, configured_template_path
 
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
@@ -14,14 +14,23 @@ from xgboost import XGBClassifier
 from transformers import DetectionFilter, MedianImputer
 
 def load_phase0_data():
-    """读取 LSCC 残差矩阵、肿瘤标签，并构造病人分组。"""
+    """读取配置指定队列的残差矩阵、肿瘤标签，并构造病人分组。"""
+
+    cohort_name = CONFIG["datasets"]["matrix_cohort"]
+    artifact_cohort = cohort_name.lower()
 
     X = pd.read_pickle(
-        configured_path("lscc_residual_matrix")
+        configured_template_path(
+            "residual_matrix_template",
+            cohort=artifact_cohort,
+        )
     )
 
     y = pd.read_csv(
-        configured_path("lscc_tumor_normal_labels"),
+        configured_template_path(
+            "tumor_normal_labels_template",
+            cohort=artifact_cohort,
+        ),
         index_col=0,
     )["is_tumor"]
 
@@ -104,8 +113,9 @@ def run_linear_floor(X, y, groups):
         f"± {results[primary_metric].std():.4f}"
     )
 
-    output_path = configured_path(
-        "lscc_floor_linear_scores"
+    output_path = configured_template_path(
+        "floor_linear_scores_template",
+        cohort=CONFIG["datasets"]["matrix_cohort"].lower(),
     )
     results.to_csv(output_path)
 
@@ -175,8 +185,9 @@ def run_xgboost_floor(X, y, groups):
         f"± {results[primary_metric].std():.4f}"
     )
 
-    output_path = configured_path(
-        "lscc_floor_xgboost_scores"
+    output_path = configured_template_path(
+        "floor_xgboost_scores_template",
+        cohort=CONFIG["datasets"]["matrix_cohort"].lower(),
     )
     results.to_csv(output_path)
 
