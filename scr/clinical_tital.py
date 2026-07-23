@@ -1,8 +1,14 @@
 import cptac
-lscc = cptac.Lscc()
+from cptac_setup import configure_cptac
+from project_config import CONFIG, get_cohort_class
 
-# clinical 表来自 mssm 源（不是 umich）
-clin = lscc.get_clinical("mssm")
+
+configure_cptac()
+cohort_name = CONFIG["clinical"]["cohort"]
+cohort = get_cohort_class(cptac, cohort_name)()
+
+# clinical 表来自配置指定的临床源（不是组学数据源）。
+clin = cohort.get_clinical(CONFIG["cptac"]["clinical_source"])
 print(clin.shape)
 
 # 先把所有列名打出来看全貌
@@ -215,13 +221,13 @@ Name: count, dtype: int64
 """
 
 # 主候选:grade G2 vs G3
-g = clin["histologic_grade"]
-g2g3 = g[g.str.startswith(("G2", "G3"), na=False)]
+g = clin[CONFIG["clinical"]["grade_column"]]
+g2g3 = g[g.str.startswith(tuple(CONFIG["clinical"]["grade_prefixes"]), na=False)]
 print("grade G2 vs G3:")
 print(g2g3.str[:2].value_counts())   # 只取 G2/G3 前两字，看最终二分类计数
 
 # 备胎:stage 早 vs 晚
-s = clin["tumor_stage_pathological"]
-early = s.isin(["Stage I", "Stage II"]).sum()
-late  = s.isin(["Stage III", "Stage IV"]).sum()
+s = clin[CONFIG["clinical"]["stage_column"]]
+early = s.isin(CONFIG["clinical"]["early_stages"]).sum()
+late = s.isin(CONFIG["clinical"]["late_stages"]).sum()
 print(f"\nstage 早(I+II)={early}  晚(III+IV)={late}")
