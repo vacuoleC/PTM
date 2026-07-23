@@ -10,6 +10,9 @@ paths:
   tumor_normal_labels_template: outputs/{cohort}_tumor_normal_labels.csv
   floor_linear_scores_template: outputs/{cohort}_floor_linear_scores.csv
   floor_xgboost_scores_template: outputs/{cohort}_floor_xgboost_scores.csv
+  phase0_null_scores_template: outputs/{cohort}_phase0_xgboost_null_scores.csv
+  phase0_null_summary: outputs/phase0_xgboost_null_summary.csv
+  phase0_learning_curve_template: outputs/{cohort}_phase0_xgboost_learning_curve.csv
 
 cptac:
   omics_source: umich
@@ -36,6 +39,12 @@ phase0:
   detection_report_thresholds: [0.1, 0.5, 0.8]
   duplicate_aggregation: median
   diagnostic_feature_index: 0
+  analysis_cohorts: [LSCC, LUAD, UCEC]
+  null_permutations: 100
+  null_random_seed: 0
+  null_progress_every: 10
+  ucec_cv_repeats: 10
+  learning_curve_train_sizes: [0.25, 0.5, 0.75, 1.0]
 
 model:
   detection_minimum: 0.5
