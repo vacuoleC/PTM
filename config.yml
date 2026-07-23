@@ -1,0 +1,51 @@
+# 项目唯一配置入口。路径均相对于项目根目录。
+project:
+  name: PTM Encoder
+
+paths:
+  data_dir: data
+  output_dir: outputs
+  coverage_matrix: outputs/coverage_matrix.csv
+  lscc_residual_matrix: outputs/lscc_multi_ptm_resid.pkl.gz
+  lscc_tumor_normal_labels: outputs/lscc_tumor_normal_labels.csv
+
+cptac:
+  omics_source: umich
+  clinical_source: mssm
+  download_retry_attempts: 3
+  download_retry_backoff_seconds: 5
+  gzip_validation_chunk_bytes: 1048576
+
+datasets:
+  cptac_class_names:
+    LSCC: Lscc
+    LUAD: Luad
+    UCEC: Ucec
+  exploration_cohort: LSCC
+  matrix_cohort: LSCC
+  coverage_cohorts: [LSCC, LUAD, UCEC]
+  focus_cohorts: [LUAD, UCEC]
+
+phase0:
+  normal_sample_suffix: .N
+  minimum_normal_samples: 20
+  residual_minimum_valid_samples: 10
+  residual_progress_every: 5000
+  detection_report_thresholds: [0.1, 0.5, 0.8]
+  duplicate_aggregation: median
+  diagnostic_feature_index: 0
+
+model:
+  detection_minimum: 0.5
+  cv_splits: 5
+  logistic_max_iterations: 2000
+  logistic_class_weight: balanced
+
+clinical:
+  cohort: LSCC
+  grade_column: histologic_grade
+  stage_column: tumor_stage_pathological
+  grade_prefixes: [G2, G3]
+  early_stages: [Stage I, Stage II]
+  late_stages: [Stage III, Stage IV]
+  focus_columns: [histologic_grade, tumor_stage_pathological]
