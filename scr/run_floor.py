@@ -3,6 +3,14 @@ import re
 import pandas as pd
 from project_config import CONFIG, configured_path
 
+from sklearn.decomposition import PCA
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GroupKFold, cross_validate
+
+from transformers import DetectionFilter, MedianImputer
+
 def load_phase0_data():
     """读取 LSCC 残差矩阵、肿瘤标签，并构造病人分组。"""
 
@@ -34,6 +42,76 @@ def load_phase0_data():
     return X, y, groups
 
 
+def make_linear_pipeline():
+    """创建一个只在训练折拟合预处理器的线性基线模型。"""
+
+    model_config = CONFIG["model"]
+
+    return Pipeline(
+        steps=[
+            ("filter", DetectionFilter()),
+            ("impute", MedianImputer()),
+            ("scale", StandardScaler()),
+            ("pca", PCA(
+                n_components=model_config["pca_components"]
+            )),
+            ("head", LogisticRegression(
+                max_iter=model_config["logistic_max_iterations"],
+                class_weight=model_config["logistic_class_weight"],
+                solver=model_config["logistic_solver"],
+            )),
+        ]
+    )
+
+
+def run_linear_floor(X, y, groups):
+    """运行按病人分组的 5 折线性 floor 实验。"""
+
+    model_config = CONFIG["model"]
+
+    cv = GroupKFold(
+        n_splits=model_config["cv_splits"]
+    )
+
+    scores = cross_validate(
+        estimator=make_linear_pipeline(),
+        X=X,
+        y=y,
+        groups=groups,
+        cv=cv,
+        scoring=model_config["scoring"],
+        return_train_score=False,
+        error_score="raise",
+    )
+
+    results = pd.DataFrame(
+        {
+            metric: scores[f"test_{metric}"]
+            for metric in model_config["scoring"]
+        }
+    )
+    results.index.name = "fold"
+
+    print("\n每折结果：")
+    print(results.to_string())
+
+    primary_metric = model_config["primary_metric"]
+    print(
+        f"\n{primary_metric}："
+        f"{results[primary_metric].mean():.4f} "
+        f"± {results[primary_metric].std():.4f}"
+    )
+
+    output_path = configured_path(
+        "lscc_floor_linear_scores"
+    )
+    results.to_csv(output_path)
+
+    print(f"已保存每折结果：{output_path}")
+
+    return results
+
+
 if __name__ == "__main__":
     X, y, groups = load_phase0_data()
 
@@ -41,3 +119,5 @@ if __name__ == "__main__":
     print("肿瘤样本数：", y.sum())
     print("正常样本数：", (y == 0).sum())
     print("独立病人数：", groups.nunique())
+
+    results = run_linear_floor(X, y, groups)
