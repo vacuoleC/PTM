@@ -1,0 +1,4 @@
+cancer,phospho_samples,acetyl_samples,protein_samples,common_normal,common_tumor,normal_meets_power_floor,common_sample_count
+LSCC,212,220,212,102,110,True,212
+LUAD,213,225,213,102,111,True,213
+UCEC,152,153,152,49,103,True,152
