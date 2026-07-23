@@ -21,15 +21,17 @@ import cptac.cancers.source as _source_module
 import cptac.tools.download_tools as _download_module
 from cptac.exceptions import HttpResponseError
 
+from project_config import CONFIG, PROJECT_ROOT
+
 
 def configure_cptac(project_root: Path | None = None) -> None:
     """将 cptac 配置为使用本项目的数据目录。
 
     该函数可以被重复调用；它不下载任何队列，真正读取某癌种时才会下载缺失文件。
     """
-    root = project_root or Path(__file__).resolve().parent.parent
+    root = project_root or PROJECT_ROOT
     root = root.resolve()
-    data_dir = root / "data"
+    data_dir = root / CONFIG["paths"]["data_dir"]
     data_dir.mkdir(exist_ok=True)
 
     # 如果用户此前已在 cptac 默认目录下载过小型索引或数据，则复用它们。
@@ -65,7 +67,7 @@ def configure_cptac(project_root: Path | None = None) -> None:
             return True
         try:
             with gzip.open(path, "rb") as handle:
-                while handle.read(1024 * 1024):
+                while handle.read(CONFIG["cptac"]["gzip_validation_chunk_bytes"]):
                     pass
         except (EOFError, OSError, gzip.BadGzipFile, zlib.error):
             return False
@@ -86,7 +88,7 @@ def configure_cptac(project_root: Path | None = None) -> None:
                 else self.cancer_type
             )
             dataset = f"{self.source}-{cancer_type}"
-            file_path = root / "data" / dataset / data_file
+            file_path = data_dir / dataset / data_file
 
             cached_file_is_valid = file_path.is_file() and valid_gzip_cache(file_path)
             if not cached_file_is_valid and not self.no_internet:
@@ -95,20 +97,22 @@ def configure_cptac(project_root: Path | None = None) -> None:
                     print(f"发现损坏缓存，重新下载：{file_path.name}", flush=True)
                     file_path.unlink()
                 last_error = None
-                for attempt in range(3):
+                retry_attempts = CONFIG["cptac"]["download_retry_attempts"]
+                for attempt in range(retry_attempts):
                     try:
                         cptac.download(self.cancer_type, self.source, datatype, data_file)
                         break
                     except HttpResponseError as error:
                         last_error = error
                         print(
-                            f"下载 {data_file} 第 {attempt + 1}/3 次失败：{error}",
+                            f"下载 {data_file} 第 {attempt + 1}/{retry_attempts} 次失败：{error}",
                             flush=True,
                         )
                         if file_path.is_file():
                             file_path.unlink()
-                        if attempt < 2:
-                            time.sleep(5 * (attempt + 1))
+                        if attempt < retry_attempts - 1:
+                            backoff = CONFIG["cptac"]["download_retry_backoff_seconds"]
+                            time.sleep(backoff * (attempt + 1))
                 else:
                     raise last_error
 
