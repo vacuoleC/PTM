@@ -137,6 +137,54 @@ def make_xgboost_pipeline():
     )
 
 
+def run_xgboost_floor(X, y, groups):
+    """运行按病人分组的 XGBoost floor 实验。"""
+
+    model_config = CONFIG["model"]
+
+    cv = GroupKFold(
+        n_splits=model_config["cv_splits"]
+    )
+
+    scores = cross_validate(
+        estimator=make_xgboost_pipeline(),
+        X=X,
+        y=y,
+        groups=groups,
+        cv=cv,
+        scoring=model_config["scoring"],
+        return_train_score=False,
+        error_score="raise",
+    )
+
+    results = pd.DataFrame(
+        {
+            metric: scores[f"test_{metric}"]
+            for metric in model_config["scoring"]
+        }
+    )
+    results.index.name = "fold"
+
+    print("\nXGBoost 每折结果：")
+    print(results.to_string())
+
+    primary_metric = model_config["primary_metric"]
+    print(
+        f"\nXGBoost {primary_metric}："
+        f"{results[primary_metric].mean():.4f} "
+        f"± {results[primary_metric].std():.4f}"
+    )
+
+    output_path = configured_path(
+        "lscc_floor_xgboost_scores"
+    )
+    results.to_csv(output_path)
+
+    print(f"已保存 XGBoost 每折结果：{output_path}")
+
+    return results
+
+
 if __name__ == "__main__":
     X, y, groups = load_phase0_data()
 
@@ -147,27 +195,4 @@ if __name__ == "__main__":
 
     results = run_linear_floor(X, y, groups)
 
-    cv = GroupKFold(
-        n_splits=CONFIG["model"]["cv_splits"]
-    )
-
-    train_index, test_index = next(cv.split(X, y, groups))
-
-    xgb_pipeline = make_xgboost_pipeline()
-
-    xgb_pipeline.fit(
-        X.iloc[train_index],
-        y.iloc[train_index],
-    )
-
-    probability = xgb_pipeline.predict_proba(
-        X.iloc[test_index]
-    )[:, 1]
-
-    print("训练样本数：", len(train_index))
-    print("测试样本数：", len(test_index))
-    print(
-        "训练折保留的特征数：",
-        xgb_pipeline.named_steps["filter"].keep_.sum(),
-    )
-    print("前 5 个肿瘤预测概率：", probability[:5])
+    xgb_results = run_xgboost_floor(X, y, groups)
