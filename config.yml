@@ -58,6 +58,7 @@ model:
   primary_metric: average_precision
 
   xgboost:
+    device: cuda
     objective: binary:logistic
     n_estimators: 200
     max_depth: 4
