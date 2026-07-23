@@ -158,6 +158,61 @@ def residual_for_one_site(ptm, protein, feature):
     return pd.Series(residual, index=ptm.index, name=feature)
 
 
+def stoich_resid(ptm, protein, min_n=10):
+    """逐位点回归 PTM ~ 母蛋白丰度，返回所有位点的回归残差矩阵。"""
+
+    assert ptm.index.equals(protein.index)
+
+    protein_by_gene = {
+        gene: protein.loc[:, gene].to_numpy(dtype=float) for gene in protein.columns
+    }
+
+    ptm_values = ptm.to_numpy(dtype=float)
+    genes = ptm.columns.get_level_values("Name")
+
+    residual_values = np.full(ptm_values.shape, np.nan)
+    skipped = 0
+
+    for j, gene in enumerate(genes):
+        x = protein_by_gene[gene]
+        y = ptm_values[:, j]
+
+        valid = np.isfinite(x) & np.isfinite(y)
+
+        if valid.sum() < min_n:
+            skipped += 1
+            continue
+
+        x_valid = x[valid]
+        y_valid = y[valid]
+
+        x_mean = x_valid.mean()
+        y_mean = y_valid.mean()
+
+        denominator = ((x_valid - x_mean) ** 2).sum()
+
+        if denominator == 0:
+            residual_values[valid, j] = y_valid - y_mean
+        else:
+            slope = (
+                ((x_valid - x_mean) * (y_valid - y_mean)).sum() / denominator
+            )
+            intercept = y_mean - slope * x_mean
+            residual_values[valid, j] = y_valid - (slope * x_valid + intercept)
+
+        if(j + 1) % 5000 == 0:
+            print(f"已完成 {j + 1} / {ptm.shape[1]} 个位点")
+
+    result = pd.DataFrame(
+        residual_values,
+        index=ptm.index,
+        columns=ptm.columns,
+    )
+
+    print(f"因有效样本少于 {min_n} 而跳过的位点数：{skipped}")
+    return result
+            
+
 
 def main() -> None:
     # 1. 加载原始三模态数据。
@@ -216,6 +271,12 @@ def main() -> None:
     test_residual = residual_for_one_site(ph, pr, test_feature)
 
     print(test_residual.head())
+
+    # 11. 对所有 PTM 位点做：PTM 丰度 ~ 母蛋白丰度，并返回残差矩阵。
+    ph_resid = stoich_resid(ph, pr)
+
+    print("磷酸化残差矩阵形状：", ph_resid.shape)
+    print("残差矩阵缺失值比例：", ph_resid.isna().mean().mean())
 
 
 if __name__ == "__main__":
