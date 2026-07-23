@@ -81,6 +81,21 @@ def inspect_duplicates(df: pd.DataFrame, label: str) -> None:
         print(duplicate_groups.head(10))
 
 
+def collapse_duplicate_features(df, label):
+    """把同一生物学特征的重复测量，按病人取中位数。"""
+    before = df.shape[1]
+
+    levels = list(range(df.columns.nlevels))
+    collapsed = df.T.groupby(level=levels, sort=False).median().T
+
+    after = collapsed.shape[1]
+
+    print(f"{label}：合并重复特征，从 {before} 列减少到 {after} 列。")
+
+    assert collapsed.columns.duplicated().sum() == 0
+    return collapsed
+
+
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
@@ -110,10 +125,17 @@ def main() -> None:
     ac = drop_unannotated_ptm(ac, "乙酰化")
     print("清理后的形状：", ph.shape, ac.shape, pr.shape)
 
-    # 6. 只检查清理后的可用特征；下一步将据此合并重复列。
+    # 6. 先报告清理后、合并前的重复特征。
     inspect_duplicates(ph, "磷酸化")
     inspect_duplicates(ac, "乙酰化")
     inspect_duplicates(pr, "蛋白组")
+
+    # 7. 合并同一生物学特征的重复测量。
+    ph = collapse_duplicate_features(ph, "磷酸化")
+    ac = collapse_duplicate_features(ac, "乙酰化")
+    pr = collapse_duplicate_features(pr, "蛋白组")
+
+    print("合并重复特征后的形状：", ph.shape, ac.shape, pr.shape)
 
 
 if __name__ == "__main__":
