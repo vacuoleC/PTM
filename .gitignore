@@ -6,7 +6,5 @@ __pycache__/
 .clinerules/
 MiniMaxMCP/
 
-*.yml
-config.yml
 
 whatwedo.md
