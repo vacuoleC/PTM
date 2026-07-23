@@ -114,6 +114,29 @@ def run_linear_floor(X, y, groups):
     return results
 
 
+def make_xgboost_pipeline():
+    """创建与线性基线使用同一预处理规则的 XGBoost floor 模型。"""
+
+    model_config = CONFIG["model"]
+    xgb_config = model_config["xgboost"]
+
+    return Pipeline(
+        steps=[
+            ("filter", DetectionFilter()),
+            ("impute", MedianImputer()),
+            ("scale", StandardScaler()),
+            ("head", XGBClassifier(
+                objective=xgb_config["objective"],
+                n_estimators=xgb_config["n_estimators"],
+                max_depth=xgb_config["max_depth"],
+                eval_metric=xgb_config["eval_metric"],
+                random_state=xgb_config["random_state"],
+                n_jobs=xgb_config["n_jobs"],
+            )),
+        ]
+    )
+
+
 if __name__ == "__main__":
     X, y, groups = load_phase0_data()
 
@@ -123,3 +146,28 @@ if __name__ == "__main__":
     print("独立病人数：", groups.nunique())
 
     results = run_linear_floor(X, y, groups)
+
+    cv = GroupKFold(
+        n_splits=CONFIG["model"]["cv_splits"]
+    )
+
+    train_index, test_index = next(cv.split(X, y, groups))
+
+    xgb_pipeline = make_xgboost_pipeline()
+
+    xgb_pipeline.fit(
+        X.iloc[train_index],
+        y.iloc[train_index],
+    )
+
+    probability = xgb_pipeline.predict_proba(
+        X.iloc[test_index]
+    )[:, 1]
+
+    print("训练样本数：", len(train_index))
+    print("测试样本数：", len(test_index))
+    print(
+        "训练折保留的特征数：",
+        xgb_pipeline.named_steps["filter"].keep_.sum(),
+    )
+    print("前 5 个肿瘤预测概率：", probability[:5])
