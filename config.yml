@@ -6,10 +6,10 @@ paths:
   data_dir: data
   output_dir: outputs
   coverage_matrix: outputs/coverage_matrix.csv
-  lscc_residual_matrix: outputs/lscc_multi_ptm_resid.pkl.gz
-  lscc_tumor_normal_labels: outputs/lscc_tumor_normal_labels.csv
-  lscc_floor_linear_scores: outputs/lscc_floor_linear_scores.csv
-  lscc_floor_xgboost_scores: outputs/lscc_floor_xgboost_scores.csv
+  residual_matrix_template: outputs/{cohort}_multi_ptm_resid.pkl.gz
+  tumor_normal_labels_template: outputs/{cohort}_tumor_normal_labels.csv
+  floor_linear_scores_template: outputs/{cohort}_floor_linear_scores.csv
+  floor_xgboost_scores_template: outputs/{cohort}_floor_xgboost_scores.csv
 
 cptac:
   omics_source: umich
