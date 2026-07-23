@@ -137,6 +137,7 @@ def make_xgboost_pipeline():
             ("impute", MedianImputer()),
             ("scale", StandardScaler()),
             ("head", XGBClassifier(
+                device=xgb_config["device"],
                 objective=xgb_config["objective"],
                 n_estimators=xgb_config["n_estimators"],
                 max_depth=xgb_config["max_depth"],
