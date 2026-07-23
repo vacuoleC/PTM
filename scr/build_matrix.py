@@ -9,6 +9,7 @@ from __future__ import annotations
 import cptac
 import pandas as pd
 import numpy as np
+from pathlib import Path
 from cptac.utils import reduce_multiindex
 
 from cptac_setup import configure_cptac
@@ -243,6 +244,35 @@ def add_modification_level(df, modification):
     return result
 
 
+def make_tumor_labels(sample_index):
+    """由 CPTAC 样本 ID 生成肿瘤/正常标签。"""
+
+    labels = pd.Series(
+        (~sample_index.astype(str).str.endswith(".N")).astype(int),
+        index=sample_index,
+        name="is_tumor",
+    )
+
+    return labels
+
+
+def save_phase0_artifacts(matrix, labels):
+    """保存 Phase 0 的输入矩阵和样本标签。"""
+
+    output_dir = Path(__file__).resolve().parent.parent / "outputs"
+    output_dir.mkdir(exist_ok=True)
+
+    matrix_path = output_dir / "lscc_multi_ptm_resid.pkl.gz"
+    labels_path = output_dir / "lscc_tumor_normal_labels.csv"
+
+    # pickle 能完整保留 MultiIndex 列名；gzip 可以减小文件体积。
+    matrix.to_pickle(matrix_path, compression="gzip")
+    labels.to_csv(labels_path, header=True)
+
+    print(f"已保存残差矩阵：{matrix_path}")
+    print(f"已保存肿瘤/正常标签：{labels_path}")
+
+
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
@@ -327,6 +357,16 @@ def main() -> None:
     print("多类 PTM 残差矩阵形状：", multi_ptm_resid.shape)
     print("列层级：", multi_ptm_resid.columns.names)
     print("前 3 个特征：", multi_ptm_resid.columns[:3])
+
+    # 13. 生成肿瘤/正常标签。
+    labels = make_tumor_labels(multi_ptm_resid.index)
+
+    assert labels.index.equals(multi_ptm_resid.index)
+
+    print("肿瘤样本数：", labels.sum())
+    print("正常样本数：", (labels == 0).sum())
+
+    save_phase0_artifacts(multi_ptm_resid, labels)
 
 
 if __name__ == "__main__":
