@@ -291,6 +291,13 @@ def main() -> None:
     print("磷酸化残差矩阵形状：", ph_resid.shape)
     print("残差矩阵缺失值比例：", ph_resid.isna().mean().mean())
 
+    ac_resid = stoich_resid(ac, pr)
+
+    print("乙酰化残差矩阵形状：", ac_resid.shape)
+    print("乙酰化残差矩阵缺失值比例：", ac_resid.isna().mean().mean())
+
+    report_detection_rate(ac_resid, "乙酰化")
+
 
 if __name__ == "__main__":
     main()
