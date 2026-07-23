@@ -9,23 +9,20 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pandas as pd
 
 from cptac_setup import configure_cptac
+from project_config import CONFIG, configured_path, get_cohort_class
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_PATH = PROJECT_ROOT / "outputs" / "coverage_matrix.csv"
-SOURCE = "umich"
-POWER_FLOOR = 20
+OUTPUT_PATH = configured_path("coverage_matrix")
 
 
 def split_sample_ids(index: pd.Index) -> tuple[set[str], set[str]]:
     """按 CPTAC 的 ``.N`` 后缀把样本编号分成正常与肿瘤。"""
     sample_ids = {str(sample_id) for sample_id in index}
-    normal_ids = {sample_id for sample_id in sample_ids if sample_id.endswith(".N")}
+    suffix = CONFIG["phase0"]["normal_sample_suffix"]
+    normal_ids = {sample_id for sample_id in sample_ids if sample_id.endswith(suffix)}
     tumor_ids = sample_ids - normal_ids
     return normal_ids, tumor_ids
 
@@ -33,9 +30,10 @@ def split_sample_ids(index: pd.Index) -> tuple[set[str], set[str]]:
 def cohort_coverage(name: str, cohort_class) -> dict[str, object]:
     """读取一个队列的三种组学表，并统计三者共同拥有的样本。"""
     cohort = cohort_class()
-    phospho = cohort.get_phosphoproteomics(SOURCE)
-    acetyl = cohort.get_acetylproteomics(SOURCE)
-    protein = cohort.get_proteomics(SOURCE)
+    source = CONFIG["cptac"]["omics_source"]
+    phospho = cohort.get_phosphoproteomics(source)
+    acetyl = cohort.get_acetylproteomics(source)
+    protein = cohort.get_proteomics(source)
 
     ph_normal, ph_tumor = split_sample_ids(phospho.index)
     ac_normal, ac_tumor = split_sample_ids(acetyl.index)
@@ -51,26 +49,23 @@ def cohort_coverage(name: str, cohort_class) -> dict[str, object]:
         "protein_samples": len(protein.index),
         "common_normal": len(common_normal),
         "common_tumor": len(common_tumor),
-        "normal_meets_power_floor": len(common_normal) >= POWER_FLOOR,
+        "normal_meets_power_floor": (
+            len(common_normal) >= CONFIG["phase0"]["minimum_normal_samples"]
+        ),
         "common_sample_count": len(common_normal | common_tumor),
     }
 
 
 def main() -> None:
-    configure_cptac(PROJECT_ROOT)
+    configure_cptac()
 
     # 在这里集中定义 Phase 0 允许使用的三支队列，后续建矩阵时也复用此名单。
     import cptac
 
-    cohorts = {
-        "LSCC": cptac.Lscc,
-        "LUAD": cptac.Luad,
-        "UCEC": cptac.Ucec,
-    }
     rows = []
-    for name, cohort_class in cohorts.items():
+    for name in CONFIG["datasets"]["coverage_cohorts"]:
         print(f"\n读取 {name} …", flush=True)
-        rows.append(cohort_coverage(name, cohort_class))
+        rows.append(cohort_coverage(name, get_cohort_class(cptac, name)))
 
     coverage = pd.DataFrame(rows).set_index("cancer")
     OUTPUT_PATH.parent.mkdir(exist_ok=True)
