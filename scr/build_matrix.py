@@ -108,6 +108,19 @@ def report_parent_protein_coverage(ptm, protein, label):
     return matched
 
 
+def keep_parent_matched_sites(ptm, matched, label):
+    """只保留能够匹配到母蛋白的 PTM 位点。"""
+
+    result = ptm.loc[:, matched]
+
+    print(
+        f"{label}：保留 {result.shape[1]} 个可做母蛋白校正的位点，"
+        f"排除 {(~matched).sum()} 个无法匹配的位点。"
+    )
+
+    return result
+
+
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
@@ -152,6 +165,12 @@ def main() -> None:
     # 8. 检查母蛋白匹配率。
     ph_match = report_parent_protein_coverage(ph, pr, "磷酸化")
     ac_match = report_parent_protein_coverage(ac, pr, "乙酰化")
+
+    # 9. 只保留匹配到母蛋白的 PTM 位点。
+    ph = keep_parent_matched_sites(ph, ph_match, "磷酸化")
+    ac = keep_parent_matched_sites(ac, ac_match, "乙酰化")
+
+    print("匹配母蛋白后的形状：", ph.shape, ac.shape, pr.shape)
 
 
 if __name__ == "__main__":
