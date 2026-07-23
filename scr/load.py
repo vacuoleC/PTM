@@ -36,4 +36,5 @@ ph = cohort.get_phosphoproteomics(CONFIG["cptac"]["omics_source"])
 print(ph.shape)
 
 # 打得出 .N 样本 = 正常样本约定成立
-print([s for s in ph.index.astype(str) if s.endswith(".N")][:5])
+suffix = CONFIG["phase0"]["normal_sample_suffix"]
+print([s for s in ph.index.astype(str) if s.endswith(suffix)][:5])
