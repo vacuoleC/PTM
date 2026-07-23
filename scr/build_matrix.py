@@ -9,13 +9,13 @@ from __future__ import annotations
 import cptac
 import pandas as pd
 import numpy as np
-from pathlib import Path
 from cptac.utils import reduce_multiindex
 
 from cptac_setup import configure_cptac
+from project_config import CONFIG, configured_path, get_cohort_class
 
 
-SOURCE = "umich"
+SOURCE = CONFIG["cptac"]["omics_source"]
 
 
 def align_three_modalities(
@@ -88,11 +88,15 @@ def collapse_duplicate_features(df, label):
     before = df.shape[1]
 
     levels = list(range(df.columns.nlevels))
-    collapsed = df.T.groupby(level=levels, sort=False).median().T
+    aggregation = CONFIG["phase0"]["duplicate_aggregation"]
+    collapsed = df.T.groupby(level=levels, sort=False).agg(aggregation).T
 
     after = collapsed.shape[1]
 
-    print(f"{label}：合并重复特征，从 {before} 列减少到 {after} 列。")
+    print(
+        f"{label}：使用 {aggregation} 合并重复特征，"
+        f"从 {before} 列减少到 {after} 列。"
+    )
 
     assert collapsed.columns.duplicated().sum() == 0
     return collapsed
@@ -139,7 +143,7 @@ def residual_for_one_site(ptm, protein, feature):
     x_valid = x[valid]
     y_valid = y[valid]
 
-    assert valid.sum() >= 10
+    assert valid.sum() >= CONFIG["phase0"]["residual_minimum_valid_samples"]
 
     x_mean = x_valid.mean()
     y_mean = y_valid.mean()
@@ -159,8 +163,10 @@ def residual_for_one_site(ptm, protein, feature):
     return pd.Series(residual, index=ptm.index, name=feature)
 
 
-def stoich_resid(ptm, protein, min_n=10):
+def stoich_resid(ptm, protein, min_n=None):
     """逐位点回归 PTM ~ 母蛋白丰度，返回所有位点的回归残差矩阵。"""
+
+    min_n = min_n or CONFIG["phase0"]["residual_minimum_valid_samples"]
 
     assert ptm.index.equals(protein.index)
 
@@ -201,7 +207,7 @@ def stoich_resid(ptm, protein, min_n=10):
             intercept = y_mean - slope * x_mean
             residual_values[valid, j] = y_valid - (slope * x_valid + intercept)
 
-        if(j + 1) % 5000 == 0:
+        if (j + 1) % CONFIG["phase0"]["residual_progress_every"] == 0:
             print(f"已完成 {j + 1} / {ptm.shape[1]} 个位点")
 
     result = pd.DataFrame(
@@ -222,7 +228,7 @@ def report_detection_rate(df, label):
     print(f"\n{label}残差矩阵的检测率摘要：")
     print(detection_rate.describe())
 
-    for threshold in [0.1, 0.5, 0.8]:
+    for threshold in CONFIG["phase0"]["detection_report_thresholds"]:
         count = (detection_rate >= threshold).sum()
         print(f"检测率 ≥ {threshold:.0%} 的位点数：{count}")
 
@@ -248,7 +254,11 @@ def make_tumor_labels(sample_index):
     """由 CPTAC 样本 ID 生成肿瘤/正常标签。"""
 
     labels = pd.Series(
-        (~sample_index.astype(str).str.endswith(".N")).astype(int),
+        (
+            ~sample_index.astype(str).str.endswith(
+                CONFIG["phase0"]["normal_sample_suffix"]
+            )
+        ).astype(int),
         index=sample_index,
         name="is_tumor",
     )
@@ -259,11 +269,11 @@ def make_tumor_labels(sample_index):
 def save_phase0_artifacts(matrix, labels):
     """保存 Phase 0 的输入矩阵和样本标签。"""
 
-    output_dir = Path(__file__).resolve().parent.parent / "outputs"
+    output_dir = configured_path("output_dir")
     output_dir.mkdir(exist_ok=True)
 
-    matrix_path = output_dir / "lscc_multi_ptm_resid.pkl.gz"
-    labels_path = output_dir / "lscc_tumor_normal_labels.csv"
+    matrix_path = configured_path("lscc_residual_matrix")
+    labels_path = configured_path("lscc_tumor_normal_labels")
 
     # pickle 能完整保留 MultiIndex 列名；gzip 可以减小文件体积。
     matrix.to_pickle(matrix_path, compression="gzip")
@@ -276,10 +286,11 @@ def save_phase0_artifacts(matrix, labels):
 def main() -> None:
     # 1. 加载原始三模态数据。
     configure_cptac()
-    lscc = cptac.Lscc()
-    ph = lscc.get_phosphoproteomics(SOURCE)
-    ac = lscc.get_acetylproteomics(SOURCE)
-    pr = lscc.get_proteomics(SOURCE)
+    cohort_name = CONFIG["datasets"]["matrix_cohort"]
+    cohort = get_cohort_class(cptac, cohort_name)()
+    ph = cohort.get_phosphoproteomics(SOURCE)
+    ac = cohort.get_acetylproteomics(SOURCE)
+    pr = cohort.get_proteomics(SOURCE)
     print("原始形状：", ph.shape, ac.shape, pr.shape)
 
     # 2. 对齐同一批病人。
@@ -326,7 +337,7 @@ def main() -> None:
 
 
     # 10. 对每个 PTM 位点做：PTM 丰度 ~ 母蛋白丰度，并返回残差。
-    test_feature = ph.columns[0]
+    test_feature = ph.columns[CONFIG["phase0"]["diagnostic_feature_index"]]
     test_residual = residual_for_one_site(ph, pr, test_feature)
 
     print(test_residual.head())
