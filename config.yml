@@ -88,6 +88,8 @@ hard_task:
   repeated_cv_repeats: 10
   block_permutations: 100
   random_seed: 0
+  progress_every_repeats: 1
+  progress_every_block_permutations: 10
   candidate_clinical_columns:
     - histologic_grade
     - tumor_stage_pathological
@@ -110,3 +112,11 @@ hard_task:
       modifications: [phosphorylation]
     multi_ptm:
       modifications: [phosphorylation, acetylation]
+
+monitoring:
+  remote_ssh_alias: sensecore
+  remote_project_dir: /data/PTM
+  remote_log_dir: logs
+  local_terminal_log: .log/terminal.log
+  poll_seconds: 30
+  tail_lines: 40
