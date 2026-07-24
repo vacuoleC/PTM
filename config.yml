@@ -31,6 +31,7 @@ paths:
   qptm_archive_audit: outputs/qptm_archive_audit.csv
   qptm_data_file: data/qptm/extracted/qPTM_all_data.txt
   qptm_condition_audit: outputs/qptm_condition_audit.csv
+  qptm_cptac_overlap_audit: outputs/qptm_cptac_feature_overlap_audit.csv
 
 cptac:
   omics_source: umich
@@ -174,4 +175,10 @@ qptm:
     modification: PTM
     sample: Sample
     condition: Condition
-    peptide_log2_ratio: Log2Ratio (peptide)
+  peptide_log2_ratio: Log2Ratio (peptide)
+  cptac_modification_map:
+    Phosphorylation: phosphorylation
+    Acetylation: acetylation
+  cptac_site_patterns:
+    phosphorylation: '^[STY]([0-9]+)$'
+    acetylation: '^K([0-9]+)$'
