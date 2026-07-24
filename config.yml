@@ -29,6 +29,8 @@ paths:
   qptm_archive: data/qptm/qptm_download.bin
   qptm_extract_dir: data/qptm/extracted
   qptm_archive_audit: outputs/qptm_archive_audit.csv
+  qptm_data_file: data/qptm/extracted/qPTM_all_data.txt
+  qptm_condition_audit: outputs/qptm_condition_audit.csv
 
 cptac:
   omics_source: umich
@@ -159,3 +161,17 @@ qptm:
   archive_format: zip
   progress_every_entries: 100
   extract_overwrite: false
+  read_chunksize: 250000
+  progress_every_chunks: 1
+  organism: Human
+  modifications: [Phosphorylation, Acetylation]
+  columns:
+    organism: Organism
+    publication: PMID
+    protein: UniProt accession
+    gene: Gene name
+    position: Position
+    modification: PTM
+    sample: Sample
+    condition: Condition
+    peptide_log2_ratio: Log2Ratio (peptide)
