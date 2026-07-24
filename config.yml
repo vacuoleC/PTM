@@ -148,4 +148,5 @@ encoder:
   pca_components: 64
   evaluation_feature_set: multi_ptm
   transductive_unlabeled_fit: true
+  evaluation_models: [raw_logistic, pca_logistic, frozen_encoder_logistic]
   comparison_baseline: pca_logistic
