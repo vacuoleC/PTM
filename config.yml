@@ -26,6 +26,8 @@ paths:
   encoder_embeddings_template: outputs/{task}_encoder_embeddings.csv
   encoder_scores_template: outputs/{task}_encoder_necessity_scores.csv
   encoder_summary_template: outputs/{task}_encoder_necessity_summary.csv
+  qptm_archive: data/qptm/qptm_download.bin
+  qptm_extract_dir: data/qptm/extracted
 
 cptac:
   omics_source: umich
