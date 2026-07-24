@@ -12,6 +12,13 @@ from run_floor import make_xgboost_pipeline
 from run_hard_task_ablation import load_hard_task_data, select_feature_set
 
 
+def report_progress(message: str) -> None:
+    """立即写出可被远端日志监控器读取的进度行。"""
+
+    timestamp = pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds")
+    print(f"[{timestamp}] {message}", flush=True)
+
+
 def make_splits(X: pd.DataFrame, y: pd.Series, groups: pd.Series, repeat: int):
     """为一个重复编号生成可复现、分层且按病人分组的折。"""
 
@@ -69,6 +76,11 @@ def repeated_scores() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
             scores = score_feature_set(features, y, groups, splits, feature_set_name)
             scores.insert(0, "repeat", repeat)
             all_scores.append(scores)
+        if (repeat + 1) % CONFIG["hard_task"]["progress_every_repeats"] == 0:
+            report_progress(
+                "repeated-CV completed "
+                f"{repeat + 1} / {CONFIG['hard_task']['repeated_cv_repeats']} repeats"
+            )
 
     result = pd.concat(all_scores, ignore_index=True)
     primary = CONFIG["hard_task"]["primary"]
@@ -133,6 +145,10 @@ def block_permutation_null() -> tuple[pd.DataFrame, float, float]:
     baseline_auprc = baseline["average_precision"].mean()
     observed = score_feature_set(multi, y, groups, splits, "multi_ptm")
     observed_delta = observed["average_precision"].mean() - baseline_auprc
+    report_progress(
+        "acetylation block permutation started; "
+        f"observed fixed-split delta AUPRC={observed_delta:.6f}"
+    )
 
     rng = np.random.default_rng(CONFIG["hard_task"]["random_seed"])
     null_rows: list[dict[str, float]] = []
@@ -149,8 +165,15 @@ def block_permutation_null() -> tuple[pd.DataFrame, float, float]:
                 "delta_auprc": null_scores["average_precision"].mean() - baseline_auprc,
             }
         )
-        if (permutation + 1) % CONFIG["phase0"]["null_progress_every"] == 0:
-            print(f"已完成 {permutation + 1} / {CONFIG['hard_task']['block_permutations']} 次乙酰化块置换")
+        if (
+            (permutation + 1)
+            % CONFIG["hard_task"]["progress_every_block_permutations"]
+            == 0
+        ):
+            report_progress(
+                "acetylation block permutations completed "
+                f"{permutation + 1} / {CONFIG['hard_task']['block_permutations']}"
+            )
 
     null = pd.DataFrame(null_rows)
     primary = CONFIG["hard_task"]["primary"]
@@ -166,6 +189,7 @@ def block_permutation_null() -> tuple[pd.DataFrame, float, float]:
 def main() -> None:
     """保存 repeated-CV、块置换 null 与统计汇总。"""
 
+    report_progress("hard-task increment validation started")
     repeated, paired, _ = repeated_scores()
     corrected = nadeau_bengio_summary(paired)
     null, observed_delta, empirical_p = block_permutation_null()
@@ -187,10 +211,14 @@ def main() -> None:
         task=primary["task_name"],
     )
     summary.to_csv(summary_path, index=False)
+    report_progress(
+        "hard-task increment validation completed; "
+        f"summary={summary_path}"
+    )
     print("重复 CV 逐折结果：", configured_template_path("hard_task_repeated_scores_template", task=primary["task_name"]))
     print("乙酰化块置换 null：", configured_template_path("hard_task_increment_null_template", task=primary["task_name"]))
     print("增量统计汇总：", summary_path)
-    print(summary.to_string(index=False))
+    print(summary.to_string(index=False), flush=True)
 
 
 if __name__ == "__main__":
