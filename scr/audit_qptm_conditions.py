@@ -45,6 +45,9 @@ def audit_conditions() -> pd.DataFrame:
         if chunk_number % settings["progress_every_chunks"] == 0:
             report_progress(f"qPTM condition audit processed chunks={chunk_number}, rows={total_rows}")
 
+    shared_contexts = set.intersection(
+        *(statistics[modification]["conditions"] for modification in settings["modifications"])
+    )
     rows = []
     for modification in settings["modifications"]:
         summary = statistics[modification]
@@ -52,6 +55,7 @@ def audit_conditions() -> pd.DataFrame:
             "organism": settings["organism"], "modification": modification,
             "events": summary["events"], "unique_sites": len(summary["sites"]),
             "unique_genes": len(summary["genes"]), "condition_contexts": len(summary["conditions"]),
+            "shared_multi_ptm_condition_contexts": len(shared_contexts),
             "unique_samples": len(summary["samples"]), "publications": len(summary["pmids"]),
             "peptide_log2_ratio_present": summary["quantified"],
             "peptide_log2_ratio_fraction": summary["quantified"] / summary["events"] if summary["events"] else 0.0,
