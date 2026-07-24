@@ -34,10 +34,12 @@ def read_remote_log(job_log: str) -> list[str]:
         check=False,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if completed.returncode:
         return [f"remote log read failed (exit={completed.returncode})"]
-    return [line for line in completed.stdout.splitlines() if line]
+    return [line for line in (completed.stdout or "").splitlines() if line]
 
 
 def append_terminal_log(job_log: str, lines: list[str]) -> None:
