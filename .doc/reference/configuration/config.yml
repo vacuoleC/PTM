@@ -1,0 +1,184 @@
+# 项目唯一配置入口。路径均相对于项目根目录。
+project:
+  name: PTM Encoder
+
+paths:
+  data_dir: data
+  output_dir: outputs
+  coverage_matrix: outputs/coverage_matrix.csv
+  residual_matrix_template: outputs/{cohort}_multi_ptm_resid.pkl.gz
+  tumor_normal_labels_template: outputs/{cohort}_tumor_normal_labels.csv
+  floor_linear_scores_template: outputs/{cohort}_floor_linear_scores.csv
+  floor_xgboost_scores_template: outputs/{cohort}_floor_xgboost_scores.csv
+  phase0_null_scores_template: outputs/{cohort}_phase0_xgboost_null_scores.csv
+  phase0_null_summary: outputs/phase0_xgboost_null_summary.csv
+  phase0_learning_curve_template: outputs/{cohort}_phase0_xgboost_learning_curve.csv
+  hard_task_label_audit: outputs/hard_task_label_audit.csv
+  hard_task_labels_template: outputs/{task}_labels.csv
+  hard_task_scores_template: outputs/{task}_{feature_set}_xgboost_scores.csv
+  hard_task_summary_template: outputs/{task}_xgboost_summary.csv
+  hard_task_repeated_scores_template: outputs/{task}_repeated_xgboost_scores.csv
+  hard_task_increment_null_template: outputs/{task}_acetylation_block_null.csv
+  hard_task_increment_summary_template: outputs/{task}_increment_summary.csv
+  encoder_checkpoint_template: outputs/{task}_frozen_encoder.pt
+  encoder_feature_manifest_template: outputs/{task}_encoder_feature_manifest.csv
+  encoder_training_history_template: outputs/{task}_encoder_training_history.csv
+  encoder_embeddings_template: outputs/{task}_encoder_embeddings.csv
+  encoder_scores_template: outputs/{task}_encoder_necessity_scores.csv
+  encoder_summary_template: outputs/{task}_encoder_necessity_summary.csv
+  qptm_archive: data/qptm/qptm_download.bin
+  qptm_extract_dir: data/qptm/extracted
+  qptm_archive_audit: outputs/qptm_archive_audit.csv
+  qptm_data_file: data/qptm/extracted/qPTM_all_data.txt
+  qptm_condition_audit: outputs/qptm_condition_audit.csv
+  qptm_cptac_overlap_audit: outputs/qptm_cptac_feature_overlap_audit.csv
+
+cptac:
+  omics_source: umich
+  clinical_source: mssm
+  download_retry_attempts: 3
+  download_retry_backoff_seconds: 5
+  gzip_validation_chunk_bytes: 1048576
+
+datasets:
+  cptac_class_names:
+    LSCC: Lscc
+    LUAD: Luad
+    UCEC: Ucec
+  exploration_cohort: LSCC
+  matrix_cohort: UCEC
+  coverage_cohorts: [LSCC, LUAD, UCEC]
+  focus_cohorts: [LUAD, UCEC]
+
+phase0:
+  normal_sample_suffix: .N
+  minimum_normal_samples: 20
+  residual_minimum_valid_samples: 10
+  residual_progress_every: 5000
+  detection_report_thresholds: [0.1, 0.5, 0.8]
+  duplicate_aggregation: median
+  diagnostic_feature_index: 0
+  analysis_cohorts: [LSCC, LUAD, UCEC]
+  null_permutations: 100
+  null_random_seed: 0
+  null_progress_every: 10
+  null_parallel_jobs: 4
+  ucec_cv_repeats: 10
+  learning_curve_train_sizes: [0.25, 0.5, 0.75, 1.0]
+
+model:
+  detection_minimum: 0.5
+  cv_splits: 5
+  logistic_max_iterations: 2000
+  logistic_class_weight: balanced
+  logistic_solver: liblinear
+  pca_components: 30
+  pca_svd_solver: full
+  scoring: [average_precision, matthews_corrcoef, balanced_accuracy, f1]
+  primary_metric: average_precision
+
+  xgboost:
+    device: cpu
+    objective: binary:logistic
+    n_estimators: 200
+    max_depth: 4
+    eval_metric: logloss
+    random_state: 0
+    n_jobs: 1
+
+clinical:
+  cohort: LSCC
+  grade_column: histologic_grade
+  stage_column: tumor_stage_pathological
+  grade_prefixes: [G2, G3]
+  early_stages: [Stage I, Stage II]
+  late_stages: [Stage III, Stage IV]
+  focus_columns: [histologic_grade, tumor_stage_pathological]
+
+hard_task:
+  cv_parallel_jobs: 4
+  repeated_cv_repeats: 10
+  block_permutations: 100
+  random_seed: 0
+  progress_every_repeats: 1
+  progress_every_block_permutations: 10
+  candidate_clinical_columns:
+    - histologic_grade
+    - tumor_stage_pathological
+    - histologic_type
+    - pathologic_staging_primary_tumor_pt
+    - pathologic_staging_regional_lymph_nodes_pn
+  candidate_minimum_labeled_samples: 30
+  candidate_minimum_class_size: 5
+  candidate_maximum_classes: 6
+  primary:
+    task_name: lscc_grade_g2_vs_g3
+    cohort: LSCC
+    label_source: clinical
+    label_column: histologic_grade
+    label_prefix_map:
+      G2: moderately_differentiated
+      G3: poorly_differentiated
+  feature_sets:
+    phosphoproteome:
+      modifications: [phosphorylation]
+    multi_ptm:
+      modifications: [phosphorylation, acetylation]
+
+monitoring:
+  remote_ssh_alias: sensecore
+  remote_project_dir: /data/PTM
+  remote_log_dir: logs
+  local_terminal_log: .log/terminal.log
+  poll_seconds: 30
+  tail_lines: 40
+  progress_noise_pattern: '^[#=O\- ]+$'
+
+encoder:
+  task_name: lscc_grade_g2_vs_g3
+  pretraining_cohorts: [LSCC, LUAD, UCEC]
+  feature_alignment: intersection
+  minimum_detection: 0.1
+  hidden_dimension: 256
+  latent_dimension: 64
+  dropout: 0.1
+  masking_probability: 0.15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 64
+  epochs: 150
+  random_seed: 0
+  device: cuda
+  progress_every_epochs: 10
+  evaluation_repeats: 10
+  progress_every_repeats: 1
+  pca_components: 64
+  evaluation_feature_set: multi_ptm
+  transductive_unlabeled_fit: true
+  evaluation_models: [raw_logistic, pca_logistic, frozen_encoder_logistic]
+  comparison_baseline: pca_logistic
+
+qptm:
+  archive_format: zip
+  progress_every_entries: 100
+  extract_overwrite: false
+  read_chunksize: 250000
+  progress_every_chunks: 1
+  organism: Human
+  modifications: [Phosphorylation, Acetylation]
+  columns:
+    organism: Organism
+    publication: PMID
+    protein: UniProt accession
+    gene: Gene name
+    position: Position
+    modification: PTM
+    sample: Sample
+    condition: Condition
+    peptide_log2_ratio: Log2Ratio (peptide)
+  cptac_modification_map:
+    Phosphorylation: phosphorylation
+    Acetylation: acetylation
+  cptac_site_patterns:
+    phosphorylation: '^[STY]([0-9]+)$'
+    acetylation: '^K([0-9]+)$'
