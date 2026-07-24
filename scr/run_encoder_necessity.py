@@ -296,7 +296,7 @@ def transform_with_encoder(frame: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]
     if not columns.isin(frame.columns).all():
         raise ValueError("困难任务矩阵缺少 checkpoint 所需的共同 PTM 特征。")
     raw = frame.loc[:, columns].to_numpy(dtype=np.float32)
-    standardized = (np.where(np.isnan(raw), mean) - mean) / scale
+    standardized = (np.where(np.isnan(raw), mean, raw) - mean) / scale
     standardized = standardized.astype(np.float32, copy=False)
     device = resolve_device()
     with torch.no_grad():
