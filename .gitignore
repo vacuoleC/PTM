@@ -13,3 +13,6 @@ logs/
 
 # 可复现的数值汇总会提交；GPU 训练 checkpoint 体积较大，保留在受控算力平台的 outputs/。
 outputs/*_frozen_encoder.pt
+
+# qPTM 原始归档和解压数据仅保留在受控算力平台，不进入 Git。
+data/qptm/
