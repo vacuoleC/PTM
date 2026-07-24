@@ -1,0 +1,3 @@
+organism,modification,events,unique_sites,unique_genes,condition_contexts,unique_samples,publications,peptide_log2_ratio_present,peptide_log2_ratio_fraction
+Human,Phosphorylation,5001481,222919,17029,1167,564,275,5001481,1.0
+Human,Acetylation,227954,34024,6904,82,25,25,227954,1.0
