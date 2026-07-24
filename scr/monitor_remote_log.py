@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -39,7 +40,12 @@ def read_remote_log(job_log: str) -> list[str]:
     )
     if completed.returncode:
         return [f"remote log read failed (exit={completed.returncode})"]
-    return [line for line in (completed.stdout or "").splitlines() if line]
+    noise_pattern = re.compile(monitor_config["progress_noise_pattern"])
+    return [
+        line
+        for line in (completed.stdout or "").splitlines()
+        if line and not noise_pattern.fullmatch(line)
+    ]
 
 
 def append_terminal_log(job_log: str, lines: list[str]) -> None:
