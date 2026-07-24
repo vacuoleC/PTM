@@ -17,6 +17,9 @@ paths:
   hard_task_labels_template: outputs/{task}_labels.csv
   hard_task_scores_template: outputs/{task}_{feature_set}_xgboost_scores.csv
   hard_task_summary_template: outputs/{task}_xgboost_summary.csv
+  hard_task_repeated_scores_template: outputs/{task}_repeated_xgboost_scores.csv
+  hard_task_increment_null_template: outputs/{task}_acetylation_block_null.csv
+  hard_task_increment_summary_template: outputs/{task}_increment_summary.csv
 
 cptac:
   omics_source: umich
@@ -82,6 +85,9 @@ clinical:
 
 hard_task:
   cv_parallel_jobs: 4
+  repeated_cv_repeats: 10
+  block_permutations: 100
+  random_seed: 0
   candidate_clinical_columns:
     - histologic_grade
     - tumor_stage_pathological
