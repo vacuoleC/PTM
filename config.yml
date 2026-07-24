@@ -175,7 +175,7 @@ qptm:
     modification: PTM
     sample: Sample
     condition: Condition
-  peptide_log2_ratio: Log2Ratio (peptide)
+    peptide_log2_ratio: Log2Ratio (peptide)
   cptac_modification_map:
     Phosphorylation: phosphorylation
     Acetylation: acetylation
