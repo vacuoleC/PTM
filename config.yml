@@ -20,6 +20,12 @@ paths:
   hard_task_repeated_scores_template: outputs/{task}_repeated_xgboost_scores.csv
   hard_task_increment_null_template: outputs/{task}_acetylation_block_null.csv
   hard_task_increment_summary_template: outputs/{task}_increment_summary.csv
+  encoder_checkpoint_template: outputs/{task}_frozen_encoder.pt
+  encoder_feature_manifest_template: outputs/{task}_encoder_feature_manifest.csv
+  encoder_training_history_template: outputs/{task}_encoder_training_history.csv
+  encoder_embeddings_template: outputs/{task}_encoder_embeddings.csv
+  encoder_scores_template: outputs/{task}_encoder_necessity_scores.csv
+  encoder_summary_template: outputs/{task}_encoder_necessity_summary.csv
 
 cptac:
   omics_source: umich
@@ -120,3 +126,26 @@ monitoring:
   local_terminal_log: .log/terminal.log
   poll_seconds: 30
   tail_lines: 40
+
+encoder:
+  task_name: lscc_grade_g2_vs_g3
+  pretraining_cohorts: [LSCC, LUAD, UCEC]
+  feature_alignment: intersection
+  minimum_detection: 0.1
+  hidden_dimension: 256
+  latent_dimension: 64
+  dropout: 0.1
+  masking_probability: 0.15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 64
+  epochs: 150
+  random_seed: 0
+  device: cuda
+  progress_every_epochs: 10
+  evaluation_repeats: 10
+  progress_every_repeats: 1
+  pca_components: 64
+  evaluation_feature_set: multi_ptm
+  transductive_unlabeled_fit: true
+  comparison_baseline: pca_logistic
