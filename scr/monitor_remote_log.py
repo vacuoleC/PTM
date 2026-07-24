@@ -54,13 +54,26 @@ def append_terminal_log(job_log: str, lines: list[str]) -> None:
             )
 
 
+def unseen_lines(job_log: str, lines: list[str]) -> list[str]:
+    """跨监控器重启去重，只保留 terminal.log 未出现过的远端行。"""
+
+    terminal_log = PROJECT_ROOT / CONFIG["monitoring"]["local_terminal_log"]
+    existing = terminal_log.read_text(encoding="utf-8") if terminal_log.exists() else ""
+    return [
+        line
+        for line in lines
+        if f"remote-monitor {job_log} | {line}" not in existing
+    ]
+
+
 def monitor(job_log: str, once: bool) -> None:
     """持续轮询远端日志；仅把从未写入过的行追加到 terminal.log。"""
 
     seen_lines: set[str] = set()
     poll_seconds = CONFIG["monitoring"]["poll_seconds"]
     while True:
-        new_lines = [line for line in read_remote_log(job_log) if line not in seen_lines]
+        candidates = [line for line in read_remote_log(job_log) if line not in seen_lines]
+        new_lines = unseen_lines(job_log, candidates)
         if new_lines:
             append_terminal_log(job_log, new_lines)
             seen_lines.update(new_lines)
