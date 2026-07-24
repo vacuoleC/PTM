@@ -28,6 +28,7 @@ paths:
   encoder_summary_template: outputs/{task}_encoder_necessity_summary.csv
   qptm_archive: data/qptm/qptm_download.bin
   qptm_extract_dir: data/qptm/extracted
+  qptm_archive_audit: outputs/qptm_archive_audit.csv
 
 cptac:
   omics_source: umich
@@ -153,3 +154,8 @@ encoder:
   transductive_unlabeled_fit: true
   evaluation_models: [raw_logistic, pca_logistic, frozen_encoder_logistic]
   comparison_baseline: pca_logistic
+
+qptm:
+  archive_format: zip
+  progress_every_entries: 100
+  extract_overwrite: false
