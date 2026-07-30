@@ -1,2 +1,0 @@
-archive_path,archive_sha256,archive_bytes,archive_entries,archive_files,compressed_bytes,uncompressed_bytes,extract_requested,extract_directory
-data/qptm/qptm_download.bin,6e4025a55a86286333dd54bee17035365f68223fa8aedec95c9697b721287b52,304580172,1,1,304580004,1548240714,True,data/qptm/extracted

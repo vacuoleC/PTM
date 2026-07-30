@@ -1,2 +1,0 @@
-task,repeated_cv_repeats,block_permutations,fixed_split_observed_delta_auprc,block_permutation_empirical_p_one_sided,repeated_delta_mean,repeated_delta_std,nadeau_bengio_correction,nadeau_bengio_t,nadeau_bengio_p_one_sided
-lscc_grade_g2_vs_g3,10,100,0.047598759208150376,0.25742574257425743,-0.0060294503350488814,0.08607306783743822,0.2700280112044818,-0.13480500933891168,0.5533408661720757
