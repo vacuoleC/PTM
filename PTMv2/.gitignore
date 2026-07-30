@@ -1,0 +1,14 @@
+# v2 local state and audit trail (append-only; never commit)
+whatwedo.md
+.log/
+logs/
+
+# Local environment and generated Python files
+.env
+__pycache__/
+*.pyc
+.vscode/
+
+# Large or externally retained artifacts
+outputs/*_frozen_encoder.pt
+data/qptm/
