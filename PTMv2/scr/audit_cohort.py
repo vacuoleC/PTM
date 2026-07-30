@@ -4,11 +4,8 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from xml.sax.saxutils import escape
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import pandas as pd
 import yaml
 
@@ -74,32 +71,55 @@ def summarise_alignment(feature_index: pd.Index, labels: pd.DataFrame) -> tuple[
     return summary, class_counts
 
 
-def plot_class_distribution(class_counts: pd.DataFrame, output_path: Path) -> None:
-    """Create a count plot that documents the frozen target's class balance."""
+def write_class_distribution_svg(class_counts: pd.DataFrame, output_path: Path) -> None:
+    """Write a dependency-free SVG bar chart for the frozen target's class balance."""
     labels = class_counts["raw_label"].astype(str).tolist()
     counts = class_counts["patients"].tolist()
     colors = ["#4C78A8", "#E45756"]
-    fig, ax = plt.subplots(figsize=(6.5, 4.2), dpi=180)
-    bars = ax.bar(labels, counts, color=colors[: len(counts)], width=0.62)
-    ax.set_title("LSCC G2 versus G3: frozen patient-level target")
-    ax.set_xlabel("Histological grade")
-    ax.set_ylabel("Number of independent patients")
-    ax.set_ylim(0, max(counts) + 12)
-    for bar, count in zip(bars, counts, strict=True):
-        ax.text(bar.get_x() + bar.get_width() / 2, count + 1, str(count), ha="center", va="bottom")
-    ax.text(
-        0.5,
-        0.94,
-        f"n = {sum(counts)}; positive-class prevalence = {class_counts.loc[class_counts['target'] == 1, 'patients'].sum() / sum(counts):.3f}",
-        transform=ax.transAxes,
-        ha="center",
-        va="top",
+    width, height = 720, 460
+    left, right, top, bottom = 100, 40, 95, 90
+    plot_width, plot_height = width - left - right, height - top - bottom
+    max_count = max(counts) + 12
+    bar_width = 150
+    gap = (plot_width - bar_width * len(counts)) / (len(counts) + 1)
+    prevalence = class_counts.loc[class_counts["target"] == 1, "patients"].sum() / sum(counts)
+    elements = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+        '<style>text{font-family:Arial,sans-serif;fill:#222}.title{font-size:21px;font-weight:600}.axis{font-size:14px}.tick{font-size:13px}.count{font-size:16px;font-weight:600}</style>',
+        f'<text x="{width / 2}" y="34" text-anchor="middle" class="title">LSCC G2 versus G3: frozen patient-level target</text>',
+        f'<text x="{width / 2}" y="58" text-anchor="middle" class="axis">n = {sum(counts)}; positive-class prevalence = {prevalence:.3f}</text>',
+        f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" stroke="#333"/>',
+        f'<line x1="{left}" y1="{top + plot_height}" x2="{width - right}" y2="{top + plot_height}" stroke="#333"/>',
+    ]
+    for tick in range(0, max_count + 1, 10):
+        y = top + plot_height - plot_height * tick / max_count
+        elements.extend(
+            [
+                f'<line x1="{left - 5}" y1="{y:.1f}" x2="{width - right}" y2="{y:.1f}" stroke="#D9D9D9" stroke-dasharray="3 3"/>',
+                f'<text x="{left - 10}" y="{y + 4:.1f}" text-anchor="end" class="tick">{tick}</text>',
+            ]
+        )
+    for index, (label, count) in enumerate(zip(labels, counts, strict=True)):
+        x = left + gap + index * (bar_width + gap)
+        bar_height = plot_height * count / max_count
+        y = top + plot_height - bar_height
+        elements.extend(
+            [
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width}" height="{bar_height:.1f}" fill="{colors[index]}"/>',
+                f'<text x="{x + bar_width / 2:.1f}" y="{y - 8:.1f}" text-anchor="middle" class="count">{count}</text>',
+                f'<text x="{x + bar_width / 2:.1f}" y="{top + plot_height + 25}" text-anchor="middle" class="axis">{escape(label.split()[0])}</text>',
+            ]
+        )
+    elements.extend(
+        [
+            f'<text x="{width / 2}" y="{height - 22}" text-anchor="middle" class="axis">Histological grade</text>',
+            f'<text x="22" y="{top + plot_height / 2}" text-anchor="middle" class="axis" transform="rotate(-90 22 {top + plot_height / 2})">Independent patients</text>',
+            "</svg>",
+        ]
     )
-    ax.spines[["top", "right"]].set_visible(False)
-    fig.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, bbox_inches="tight")
-    plt.close(fig)
+    output_path.write_text("\n".join(elements), encoding="utf-8")
 
 
 def write_report(summary: pd.DataFrame, class_counts: pd.DataFrame, figure_path: Path, output_path: Path) -> None:
@@ -153,7 +173,7 @@ def main(config_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
     summary.to_csv(summary_path, index=False)
     class_counts.to_csv(class_count_path, index=False)
-    plot_class_distribution(class_counts, figure_path)
+    write_class_distribution_svg(class_counts, figure_path)
     write_report(summary, class_counts, figure_path, report_path)
     print(f"[E1.1] Audit complete: {summary_path}", flush=True)
     print(f"[E1.1] Figure complete: {figure_path}", flush=True)

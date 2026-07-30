@@ -31,5 +31,5 @@ monitoring:
 audit_outputs:
   cohort_summary: "outputs/tables/e1_1_cohort_label_audit.csv"
   class_counts: "outputs/tables/e1_1_class_counts.csv"
-  cohort_figure: "outputs/figures/e1_1_cohort_label_distribution.png"
+  cohort_figure: "outputs/figures/e1_1_cohort_label_distribution.svg"
   cohort_report: "outputs/reports/e1_1_cohort_label_audit.md"
