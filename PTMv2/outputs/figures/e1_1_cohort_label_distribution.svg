@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,sans-serif;fill:#222}.title{font-size:21px;font-weight:600}.axis{font-size:14px}.tick{font-size:13px}.count{font-size:16px;font-weight:600}</style>
+<text x="360.0" y="34" text-anchor="middle" class="title">LSCC G2 versus G3: frozen patient-level target</text>
+<text x="360.0" y="58" text-anchor="middle" class="axis">n = 106; positive-class prevalence = 0.453</text>
+<line x1="100" y1="95" x2="100" y2="370" stroke="#333"/>
+<line x1="100" y1="370" x2="680" y2="370" stroke="#333"/>
+<line x1="95" y1="370.0" x2="680" y2="370.0" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="374.0" text-anchor="end" class="tick">0</text>
+<line x1="95" y1="330.7" x2="680" y2="330.7" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="334.7" text-anchor="end" class="tick">10</text>
+<line x1="95" y1="291.4" x2="680" y2="291.4" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="295.4" text-anchor="end" class="tick">20</text>
+<line x1="95" y1="252.1" x2="680" y2="252.1" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="256.1" text-anchor="end" class="tick">30</text>
+<line x1="95" y1="212.9" x2="680" y2="212.9" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="216.9" text-anchor="end" class="tick">40</text>
+<line x1="95" y1="173.6" x2="680" y2="173.6" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="177.6" text-anchor="end" class="tick">50</text>
+<line x1="95" y1="134.3" x2="680" y2="134.3" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="138.3" text-anchor="end" class="tick">60</text>
+<line x1="95" y1="95.0" x2="680" y2="95.0" stroke="#D9D9D9" stroke-dasharray="3 3"/>
+<text x="90" y="99.0" text-anchor="end" class="tick">70</text>
+<rect x="193.3" y="142.1" width="150" height="227.9" fill="#4C78A8"/>
+<text x="268.3" y="134.1" text-anchor="middle" class="count">58</text>
+<text x="268.3" y="395" text-anchor="middle" class="axis">G2</text>
+<rect x="436.7" y="181.4" width="150" height="188.6" fill="#E45756"/>
+<text x="511.7" y="173.4" text-anchor="middle" class="count">48</text>
+<text x="511.7" y="395" text-anchor="middle" class="axis">G3</text>
+<text x="360.0" y="438" text-anchor="middle" class="axis">Histological grade</text>
+<text x="22" y="232.5" text-anchor="middle" class="axis" transform="rotate(-90 22 232.5)">Independent patients</text>
+</svg>

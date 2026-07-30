@@ -1,0 +1,11 @@
+metric,value
+matrix_samples,212
+matrix_unique_sample_ids,212
+label_rows,106
+label_unique_patient_ids,106
+label_sample_patient_id_mismatches,0
+labelled_patients_present_in_matrix,106
+labelled_patients_missing_from_matrix,0
+matrix_samples_without_grade_label,106
+label_target_missing,0
+normal_like_labelled_sample_ids,0
