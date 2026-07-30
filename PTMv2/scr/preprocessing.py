@@ -1,6 +1,9 @@
 """Leakage-safe preprocessing components for PTMv2 sklearn pipelines."""
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 
 class DetectionRateFilter(BaseEstimator, TransformerMixin):
@@ -14,3 +17,12 @@ class DetectionRateFilter(BaseEstimator, TransformerMixin):
     def transform(self, X):
         if not hasattr(self, "support_mask_"): raise RuntimeError("Fit DetectionRateFilter before transform.")
         return np.asarray(X, dtype=float)[:, self.support_mask_]
+
+
+def make_preprocessing_pipeline(threshold: float) -> Pipeline:
+    """Build the frozen-order pipeline; every fitted step learns only from fit data."""
+    return Pipeline([
+        ("detection_filter", DetectionRateFilter(threshold)),
+        ("median_imputer", SimpleImputer(strategy="median")),
+        ("standard_scaler", StandardScaler()),
+    ])
