@@ -1,5 +1,5 @@
-# v2 local state and audit trail (append-only; never commit)
-whatwedo.md
+# v2 local audit trail (append-only; never commit)
+# whatwedo.md is a versioned research ledger and must be committed atomically.
 .log/
 logs/
 
