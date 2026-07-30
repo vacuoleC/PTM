@@ -1,0 +1,28 @@
+project:
+  name: PTMv2
+  canonical_root: "D:\\coding\\PTM"
+  task_root: "D:\\coding\\PTM\\PTMv2"
+  archive_policy: "PTMv1 is read-only and Git-ignored"
+
+paths:
+  v1_archive_root: "../PTMv1"
+  source_matrix: "../PTMv1/outputs/lscc_multi_ptm_resid.pkl.gz"
+  source_labels: "../PTMv1/outputs/lscc_grade_g2_vs_g3_labels.csv"
+  data_manifest: "data/manifest.tsv"
+  processed_data: "data/processed"
+  scripts: "scr"
+  tests: "tests"
+  outputs: "outputs"
+  figures: "outputs/figures"
+  tables: "outputs/tables"
+  reports: "outputs/reports"
+
+runtime:
+  python_executable: "D:\\enviranment\\ptm-encoder\\python.exe"
+  random_seed: 0
+
+monitoring:
+  heartbeat_interval_minutes: 30
+  long_task_progress_interval: 10
+  remote_project_root: "/data/PTM"
+  remote_log_directory: "/data/PTM/logs"

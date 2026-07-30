@@ -8,11 +8,11 @@ PTMv2 刚初始化，目标是把 v1 的“encoder 未显示稳定增益”结�
 
 - `whathappentov1.md`：记录 v1 的证据、局限，以及 v2 的研究边界。
 - `list.md`：已改写为可执行行动指南，规定先冻结研究设计，再依次完成可建模性审计、低容量主比较、失败边界与条件性多视图分析。
-- 当前尚未创建 v2 数据 manifest、配置文件、`study_design.yaml`、代码或正式实验结果。
+- 已建立 `config/project.yaml` 和 `data/manifest.tsv`；`study_design.yaml`、分析代码和正式实验结果尚未创建。
 
 ## 下一步
 
-从 P0 开始：创建 v2 目录骨架、数据 manifest 和 `study_design.yaml`，在主标签、主比较、拆分规则和统计推断被冻结并提交前，不运行模型比较。
+进入 E0.3：冻结 `study_design.yaml`。在主标签、主比较、拆分规则和统计推断被冻结并提交前，不运行模型比较。
 
 ## 自动化与记录规则
 
@@ -65,3 +65,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：在 Codex 用户级 `AGENTS.md` 写入不含项目路径的全局三态监督规则；本项目级 `AGENTS.md` 声明 `automation_supervisor: active`、规范项目根目录、当前事件和 30 分钟心跳间隔。
 - 结果怎么样：PTMv2 已成为首个启用项目。监督器将以 `D:\coding\PTM\PTMv2` 的 `AGENTS.md`、`whatwedo.md` 和 `.log/` 为状态来源；当前可执行事件为 E0.1。
 - 证据与决策：全局规则位于 `C:\Users\29474\.codex\AGENTS.md`；本次原子提交包含项目级状态与本条记录。下一步由监督器进入 E0.1，而非等待用户再次发出继续指令。
+
+### E0.1 — 目录、配置与数据 manifest
+
+- 父事件：E0；状态：已完成
+- 为什么做：v2 必须从 v1 只读归档中可审计地引用输入，而不能依赖本机隐含路径、未记录版本或人工记忆；所有后续脚本也需要统一配置路径与运行参数。
+- 怎么做：以既有 `ptm-encoder` 环境只读核验 LSCC 残差矩阵和标签；为五个 v1 来源文件计算 SHA256、记录文件大小与已知形状；建立 `config/project.yaml`、`data/manifest.tsv` 和 v2 的 processed、scripts、tests、figures、tables、reports 目录。
+- 结果怎么样：主矩阵为 212 × 91,692，列层级为 Modification/Name/Site；主候选标签为 106 位独立病人，G2=58、G3=48。`data/manifest.tsv` 固定了主输入及三份只读 v1 参考证据的哈希；未复制、改写或追踪 v1 数据。
+- 证据与决策：`config/project.yaml`、`data/manifest.tsv`；本地日志事件 E0.1；矩阵/标签的只读核验命令。配置与 manifest 本身没有可表达数值结论的图表价值，因此以 SHA256、形状和类别数表作为可核验依据。下一步进入 E0.3 冻结研究设计。
