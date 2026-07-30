@@ -184,3 +184,11 @@ E7  最终可复现交付与执行对比报告
 - 证据与决策：`releases/e2_2_remote_oof_bundle.tar.gz`、`remote/E2_2_REMOTE_RUN.md`、`scr/build_e2_2_remote_bundle.py`、`scr/smoke_oof.py`、日志 E2.2.d。将包推送 GitHub 后，由用户在 `/data/PTM` 的既有 `ptm-encoder` 环境执行；需要返回 OOF CSV、完整运行日志和三条核验命令输出。本地在收到这些交付后才核验、记录结果并继续 E2.2。
 - 状态同步：运行包提交 `54d9379` 已推送；机器状态从等待 SSH 连接改为 `blocked_pending_remote_result`。恢复条件是收到上述三项交付，而不是重复或猜测远程连接。
 - 远程检查点：用户已授权使用本机 `sensecore` SSH 别名。2026-07-30 的只读检查确认 `/data/PTM`、两个只读输入和 PID 文件均存在；PID `3542592` 正运行 `python PTMv2/scr/smoke_oof.py --config PTMv2/config/project.yaml`，58 分钟时单 CPU 核约 99%，结果 CSV 尚不存在。时间戳日志显示 13:02 UTC 开始、13:40 UTC 已完成 10/50 折；这表明运行器版本与日志重定向均正确。日志中的 sklearn `penalty` 弃用警告不改变冻结参数或计算含义。作业状态已知，决策是不重启，恢复自动化为 `active_remote_e2_2_running` 并监控其原日志。
+
+#### E2.2.e — 固定 OOF 结果完整性验证器
+
+- 父事件：E2.2；同级比较组：E2.2.a–d；状态：已完成
+- 为什么做：远程作业是长时间、重复折的计算，输出文件出现并不自动保证它完整、没有重复记录，或仍对应冻结的测试病人。需要在任何指标计算前阻止截断、缺失或错误对齐的 CSV 进入分析。
+- 怎么做：新增 `validate_e2_2_oof.py`，以冻结的外层 test 分配为真值，精确比较 `(fold, patient_id, target)` 覆盖，拒绝重复记录、缺失/非有限得分和区间外概率；新增三项单元测试覆盖正确、截断和非法概率情形。
+- 结果怎么样：首次测试发现既有 `ptm-encoder` 环境未安装 `pytest`；为避免为测试额外扩展环境，改用标准库 `unittest` 后 3/3 通过，且 Python 编译检查通过。真实 CSV 尚未产生，所以尚未对远程结果作验证或得出模型结论。
+- 证据与决策：`scr/validate_e2_2_oof.py`、`tests/test_validate_e2_2_oof.py`、日志 E2.2.e。验证器通过后，在远程 CSV 出现时立即运行它，只有通过才进入性能汇总。
