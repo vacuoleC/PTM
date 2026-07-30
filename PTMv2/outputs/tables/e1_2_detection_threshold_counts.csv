@@ -1,0 +1,7 @@
+modification,detection_threshold,retained_features,retained_percent
+phosphorylation,0.1,46700,64.53752712096295
+phosphorylation,0.3,31521,43.5607578668067
+phosphorylation,0.5,22910,31.660701206450987
+acetylation,0.1,13834,71.56380942527547
+acetylation,0.3,9996,51.70968910040867
+acetylation,0.5,7447,38.523614919041954
