@@ -213,6 +213,6 @@ E7  最终可复现交付与执行对比报告
 
 - 父事件：E0.4；状态：已完成
 - 为什么做：`active_remote_e2_2_running` 已有 5 分钟心跳监控，但全局 Stop Hook 会在每次检查点结束后立即重复注入续跑提示，造成无新增信息的空转轮询。
-- 怎么做：全局 Hook 识别项目 `automation_state` 中带数字的状态名；仅当状态以 `active_remote_` 开头且 Stop 已是续跑回合时放行，首个 active 回合仍保持续跑。以两条模拟 Stop 载荷验证。
-- 结果怎么样：重复 Stop 返回 `continue: true`，首次 Stop 仍返回 active 续跑指令。心跳不会被停止，因此远程作业继续按计划监控。
+- 怎么做：全局 Hook 识别项目 `automation_state` 中带数字的状态名；当状态以 `active_remote_` 开头时，所有 Stop 均放行，由已存在的周期心跳继续远程轮询。以两条模拟 Stop 载荷验证并修复状态正则的数字匹配。
+- 结果怎么样：远程监控状态的首次与重复 Stop 均返回 `continue: true`；普通 active 状态仍保持续跑。心跳不会被停止，因此远程作业继续按计划监控而不发生即时空转。
 - 证据与决策：`C:\Users\29474\.codex\hooks\automation_supervisor.py`、日志 E0.4.c。此全局运行时修复不属于 PTM Git；项目账本记录其可审计行为。
