@@ -1,5 +1,20 @@
 # PTMv2 项目：上下文恢复与行动钩子
 
+## 自动化监督器状态
+
+```yaml
+automation_supervisor: active
+canonical_project_root: "D:\\coding\\PTM"
+task_directory: "D:\\coding\\PTM\\PTMv2"
+current_root_event: "E0"
+current_event: "E0.1"
+work_ledger: "whatwedo.md"
+local_logs: ".log/"
+heartbeat_interval_minutes: 30
+```
+
+本项目启用全局自动化任务监督钩子。最终完成前必须具备：冻结的研究设计与数据 manifest、无泄漏管线及测试、可建模性审计、主比较的可复现结果、失败边界与数据路线图、执行对比报告及其表图和生成脚本。事件树的条件性分支若不满足开启条件，必须以有证据的“不启动”记录完成，而不是遗漏。
+
 ## 强制上下文重建
 
 每当代理开始新的上下文、从摘要或压缩上下文恢复，或缺少当前工作状态时，必须在回答用户、提出计划、运行命令或修改文件前完整读取：
