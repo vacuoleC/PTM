@@ -41,6 +41,7 @@ e2_2_smoke:
   outer_assignments: "outputs/tables/e2_2_outer_split_assignments.csv"
   output: "outputs/tables/e2_2_fixed_parameter_oof_smoke.csv"
   fold_summary: "outputs/tables/e2_2_fixed_parameter_oof_smoke_fold_summary.csv"
+  repeat_summary: "outputs/tables/e2_2_fixed_parameter_oof_smoke_repeat_summary.csv"
 
 audit_outputs:
   cohort_summary: "outputs/tables/e1_1_cohort_label_audit.csv"

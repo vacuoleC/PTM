@@ -31,7 +31,7 @@ echo $! > logs/e2_2_fixed_parameter_oof_smoke.pid
 tail -f logs/e2_2_fixed_parameter_oof_smoke.log
 ```
 
-完成时，日志最后一行应为 `[E2.2] complete: wrote ...`，并且 CSV 应有 5,300 条预测记录（50 折 × 每折测试病人）；因此 `wc -l` 应显示 5,301 行（含表头）：
+完成时，日志最后一行应为 `[E2.2] complete: wrote ...`，并且 CSV 应有 1,060 条预测记录（10 次重复 × 106 位病人）；因此 `wc -l` 应显示 1,061 行（含表头）：
 
 ```bash
 wc -l PTMv2/outputs/tables/e2_2_fixed_parameter_oof_smoke.csv

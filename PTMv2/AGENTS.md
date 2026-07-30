@@ -7,8 +7,8 @@ automation_supervisor: active
 canonical_project_root: "D:\\coding\\PTM"
 task_directory: "D:\\coding\\PTM\\PTMv2"
 current_root_event: "E0"
-current_event: "E2.2"
-automation_state: "active_remote_e2_2_running"
+current_event: "E3.1"
+automation_state: "active"
 work_ledger: "whatwedo.md"
 local_logs: ".log/"
 heartbeat_interval_minutes: 5
