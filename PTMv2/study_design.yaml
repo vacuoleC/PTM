@@ -1,0 +1,110 @@
+study:
+  name: "PTMv2 小样本 PTM 可建模性审计"
+  version: "2.0"
+  status: "frozen"
+  frozen_on: "2026-07-30"
+  rationale: >-
+    LSCC G2 versus G3 is retained as the difficult, balanced patient-level task from v1.
+    It is not selected using v2 model performance.
+
+data:
+  manifest: "data/manifest.tsv"
+  cohort: "LSCC"
+  feature_source_id: "lscc_multi_ptm_residuals"
+  label_source_id: "lscc_g2_g3_labels"
+  unit_of_analysis: "patient"
+  feature_representation: "parent_protein_adjusted_multi_ptm_residual"
+  target_column: "target"
+  positive_class: 1
+  negative_class: 0
+  expected_labeled_patients: 106
+  expected_class_counts: {0: 58, 1: 48}
+  patient_overlap_policy: "forbid_train_test_overlap"
+
+preprocessing:
+  detection_rate_definition: "non_missing_fraction"
+  detection_threshold_candidates: [0.1, 0.3, 0.5]
+  imputation: "median_fit_on_training_fold"
+  scaling: "standard_scaler_fit_on_training_fold"
+  variance_filter: "none"
+  leakage_policy: "all learned transforms fit only on the relevant training fold"
+
+evaluation:
+  outer_cv: {splits: 5, repeats: 10, stratified: true, patient_level: true}
+  inner_cv: {splits: 3, stratified: true}
+  primary_metric: "average_precision"
+  secondary_metrics: ["balanced_accuracy", "matthews_corrcoef", "f1"]
+  random_seed: 0
+  save_oof_predictions: true
+  permutation_test:
+    enabled: true
+    count: 500
+    scope: "complete_primary_pipeline_including_inner_selection"
+    p_value: "(1 + count(null >= observed)) / (1 + permutation_count)"
+  learning_curve:
+    enabled: true
+    training_fractions: [0.5, 0.7, 1.0]
+    repeats_per_fraction: 10
+    note: "All fractions retain stratified inner validation; no 20 percent curve is used."
+
+models:
+  primary:
+    - id: "raw_elastic_net"
+      pipeline: ["detection_filter", "median_imputer", "standard_scaler", "elastic_net_logistic"]
+      classifier:
+        name: "LogisticRegression"
+        penalty: "elasticnet"
+        solver: "saga"
+        max_iter: 10000
+        C: [0.01, 0.1, 1.0]
+        l1_ratio: [0.1, 0.5, 0.9]
+    - id: "pca_elastic_net"
+      pipeline: ["detection_filter", "median_imputer", "standard_scaler", "pca", "elastic_net_logistic"]
+      pca_components: [10, 20, 40]
+      classifier:
+        name: "LogisticRegression"
+        penalty: "elasticnet"
+        solver: "saga"
+        max_iter: 10000
+        C: [0.01, 0.1, 1.0]
+        l1_ratio: [0.1, 0.5, 0.9]
+  exploratory:
+    - id: "svd_calibrated_linear_svm"
+      pipeline: ["detection_filter", "median_imputer", "standard_scaler", "truncated_svd", "calibrated_linear_svm"]
+      svd_components: [10, 20, 40]
+      classifier: {C: [0.01, 0.1, 1.0], calibration_cv: 3}
+    - id: "umap_elastic_net"
+      pipeline: ["detection_filter", "median_imputer", "standard_scaler", "umap", "elastic_net_logistic"]
+      umap: {n_components: [10, 20], n_neighbors: [10, 20], min_dist: [0.0]}
+      classifier:
+        name: "LogisticRegression"
+        penalty: "elasticnet"
+        solver: "saga"
+        max_iter: 10000
+        C: [0.01, 0.1, 1.0]
+        l1_ratio: [0.1, 0.5, 0.9]
+
+inference_and_decisions:
+  random_auprc_baseline: 0.4528301887
+  primary_evidence_rule: >-
+    A primary model is called predictive only when its repeated out-of-fold average
+    precision is above the class-prevalence baseline and its complete-pipeline
+    permutation p-value is at most 0.05.
+  comparison_rule: >-
+    Compare primary models using paired repeated out-of-fold average precision
+    differences; do not treat five folds within one repeat as independent samples.
+  exploratory_rule: "Exploratory results do not alter the primary conclusion."
+  multiview_gate: >-
+    Start only if real patient-level phosphorylation/acetylation pairs exist and a
+    single-modality primary pipeline passes the primary evidence rule.
+  encoder_reentry_gate: >-
+    Reconsider a deep encoder only with measurement-compatible unlabeled pretraining
+    data or a learning curve showing stable benefit from additional samples.
+
+expected_outputs:
+  modelability_report: "outputs/reports/modelability_audit.md"
+  primary_scores: "outputs/tables/primary_model_oof_scores.csv"
+  permutation_null: "outputs/tables/primary_model_permutation_null.csv"
+  learning_curve: "outputs/tables/primary_model_learning_curve.csv"
+  data_roadmap: "outputs/reports/data_roadmap.md"
+  execution_report: "outputs/reports/v2_execution_comparison.md"

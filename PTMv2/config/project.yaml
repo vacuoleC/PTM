@@ -8,6 +8,7 @@ paths:
   v1_archive_root: "../PTMv1"
   source_matrix: "../PTMv1/outputs/lscc_multi_ptm_resid.pkl.gz"
   source_labels: "../PTMv1/outputs/lscc_grade_g2_vs_g3_labels.csv"
+  study_design: "study_design.yaml"
   data_manifest: "data/manifest.tsv"
   processed_data: "data/processed"
   scripts: "scr"
