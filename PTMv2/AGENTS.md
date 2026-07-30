@@ -8,7 +8,7 @@ canonical_project_root: "D:\\coding\\PTM"
 task_directory: "D:\\coding\\PTM\\PTMv2"
 current_root_event: "E0"
 current_event: "E2.2"
-automation_state: "blocked_pending_ssh_connection"
+automation_state: "blocked_pending_remote_result"
 work_ledger: "whatwedo.md"
 local_logs: ".log/"
 heartbeat_interval_minutes: 5

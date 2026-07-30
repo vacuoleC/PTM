@@ -182,3 +182,4 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：将固定的检测率阈值 0.1、`C=0.1`、`l1_ratio=0.5`、输入/输出路径和进度频率写入 `config/project.yaml`。重构 `scr/smoke_oof.py`，使其读取配置、每十折输出 UTC 时间戳并 `flush=True`；新增远程运行说明和可复现 tar 构建脚本。tar 仅包含配置、冻结设计、manifest、执行脚本及预先固定的 50 折分配，不包含 PTMv1 原始矩阵。
 - 结果怎么样：已生成并列出 9 个包内文件，SHA256 为 `800c70f444dbcf1c2aff37f83392054ea02509e925411d11cee1fa25a68401a4`。本地已通过 Python 编译、`--help` 调用、tar 成员清单和 diff 空白检查；尚未运行任何一折，因此没有新的模型性能结论。
 - 证据与决策：`releases/e2_2_remote_oof_bundle.tar.gz`、`remote/E2_2_REMOTE_RUN.md`、`scr/build_e2_2_remote_bundle.py`、`scr/smoke_oof.py`、日志 E2.2.d。将包推送 GitHub 后，由用户在 `/data/PTM` 的既有 `ptm-encoder` 环境执行；需要返回 OOF CSV、完整运行日志和三条核验命令输出。本地在收到这些交付后才核验、记录结果并继续 E2.2。
+- 状态同步：运行包提交 `54d9379` 已推送；机器状态从等待 SSH 连接改为 `blocked_pending_remote_result`。恢复条件是收到上述三项交付，而不是重复或猜测远程连接。
