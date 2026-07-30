@@ -3,11 +3,12 @@
 ## 自动化监督器状态
 
 ```yaml
-automation_supervisor: active
+automation_supervisor: paused
 canonical_project_root: "D:\\coding\\PTM"
 task_directory: "D:\\coding\\PTM\\PTMv2"
 current_root_event: "E0"
 current_event: "E2.2"
+automation_state: "blocked_pending_ssh_connection"
 work_ledger: "whatwedo.md"
 local_logs: ".log/"
 heartbeat_interval_minutes: 5
@@ -42,6 +43,14 @@ heartbeat_test_target: "E2.1 -> E2.2"
 4. 确认工作区中没有因本次操作产生的意外未提交文件。
 
 `.log/`、远程运行日志、原始数据和临时诊断产物由 `.gitignore` 保持本地。`whatwedo.md` 是受版本控制的研究账本：每一个独立的研究、代码、数据、结果或决策提交，必须与其对应的 `whatwedo.md` 事件记录在同一个原子 commit 中提交。正式、可复现的数值汇总、脚本与研究设计应按单一实验轮次原子提交。
+
+## 任务连续性与切换点
+
+Git 原子提交只是可审计的版本边界，**不是**对话、心跳或研究事件的结束边界。一个事件（例如 E2.2）可以、也通常应当包含多个代码、测试、结果和账本提交；每次提交并完成校验后，代理必须立刻检查该事件尚未完成的子步骤并在同一任务回合继续，不能把“已提交”当作停止理由。
+
+只有下列情形可结束当前任务回合：事件达到预先定义的完成条件；状态已先写为 `blocked_*`、`complete*` 或 `paused`；或真实的上下文/时间上限要求切换。在最后一种情况下，必须先在 `whatwedo.md` 与三类 `.log/` 记录当前子检查点、剩余子步骤、精确恢复命令、运行作业状态和 Git 状态。随后恢复时从该检查点继续，不重复已完成的子步骤。
+
+机器可读状态必须与实际情况同步：可继续时设 `automation_supervisor: active` 与 `automation_state: active`；需要用户信息或授权时先设 `automation_supervisor: paused` 与 `automation_state: blocked_<原因>`，再提出一个请求并暂停心跳；整个项目完成时先写 `automation_supervisor: paused` 与 `automation_state: complete`，再交付最终报告。Stop Hook 以该状态作为是否续跑的唯一依据。
 
 ## 本地行动日志规则
 
