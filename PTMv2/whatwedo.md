@@ -208,3 +208,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：将 SSH 别名、PID、日志与输出路径加入 `project.yaml`；新增 `monitor_e2_2_remote.py`，固定为 SSH BatchMode 的只读进程/日志/文件哈希查询，并以制表符字段解析结果。它不包含启动、终止、删除或远程写入逻辑。
 - 结果怎么样：标准库解析测试 1/1 通过、Python 编译检查通过，并已对 PID `3542592` 成功执行真实只读调用；调用确认 14:16 UTC 已完成 20/50 折且 CSV 尚不存在。不改变已运行的作业。
 - 证据与决策：`scr/monitor_e2_2_remote.py`、`tests/test_monitor_e2_2_remote.py`、日志 E2.2.g。后续心跳应调用该脚本作为统一监控入口，并在输出出现时转入本地验证器。
+
+#### E0.4.c — 已知远程作业的 Stop Hook 去重
+
+- 父事件：E0.4；状态：已完成
+- 为什么做：`active_remote_e2_2_running` 已有 5 分钟心跳监控，但全局 Stop Hook 会在每次检查点结束后立即重复注入续跑提示，造成无新增信息的空转轮询。
+- 怎么做：全局 Hook 识别项目 `automation_state` 中带数字的状态名；仅当状态以 `active_remote_` 开头且 Stop 已是续跑回合时放行，首个 active 回合仍保持续跑。以两条模拟 Stop 载荷验证。
+- 结果怎么样：重复 Stop 返回 `continue: true`，首次 Stop 仍返回 active 续跑指令。心跳不会被停止，因此远程作业继续按计划监控。
+- 证据与决策：`C:\Users\29474\.codex\hooks\automation_supervisor.py`、日志 E0.4.c。此全局运行时修复不属于 PTM Git；项目账本记录其可审计行为。
