@@ -33,3 +33,7 @@ audit_outputs:
   class_counts: "outputs/tables/e1_1_class_counts.csv"
   cohort_figure: "outputs/figures/e1_1_cohort_label_distribution.svg"
   cohort_report: "outputs/reports/e1_1_cohort_label_audit.md"
+  measurement_summary: "outputs/tables/e1_2_measurement_summary.csv"
+  threshold_counts: "outputs/tables/e1_2_detection_threshold_counts.csv"
+  measurement_figure: "outputs/figures/e1_2_detection_thresholds.svg"
+  measurement_report: "outputs/reports/e1_2_measurement_audit.md"
