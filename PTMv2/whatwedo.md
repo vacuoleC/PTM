@@ -177,9 +177,10 @@ E7  最终可复现交付与执行对比报告
 
 #### E2.2.d — 远程固定参数 OOF 冒烟运行包
 
-- 父事件：E2.2；同级比较组：E2.2.a–c；状态：等待远程结果
+- 父事件：E2.2；同级比较组：E2.2.a–c；状态：进行中（远程作业）
 - 为什么做：E2.2.b 已证明本地交互窗口无法完成 50 折高维 `saga` 拟合，但这不是模型结果或研究失败。用户已授权在既有算力机上手动运行；需要一个不含原始数据、参数冻结、可核验且可独立交付的最小包，避免远程临时修改设计或脚本。
 - 怎么做：将固定的检测率阈值 0.1、`C=0.1`、`l1_ratio=0.5`、输入/输出路径和进度频率写入 `config/project.yaml`。重构 `scr/smoke_oof.py`，使其读取配置、每十折输出 UTC 时间戳并 `flush=True`；新增远程运行说明和可复现 tar 构建脚本。tar 仅包含配置、冻结设计、manifest、执行脚本及预先固定的 50 折分配，不包含 PTMv1 原始矩阵。
 - 结果怎么样：已生成并列出 9 个包内文件，SHA256 为 `800c70f444dbcf1c2aff37f83392054ea02509e925411d11cee1fa25a68401a4`。本地已通过 Python 编译、`--help` 调用、tar 成员清单和 diff 空白检查；尚未运行任何一折，因此没有新的模型性能结论。
 - 证据与决策：`releases/e2_2_remote_oof_bundle.tar.gz`、`remote/E2_2_REMOTE_RUN.md`、`scr/build_e2_2_remote_bundle.py`、`scr/smoke_oof.py`、日志 E2.2.d。将包推送 GitHub 后，由用户在 `/data/PTM` 的既有 `ptm-encoder` 环境执行；需要返回 OOF CSV、完整运行日志和三条核验命令输出。本地在收到这些交付后才核验、记录结果并继续 E2.2。
 - 状态同步：运行包提交 `54d9379` 已推送；机器状态从等待 SSH 连接改为 `blocked_pending_remote_result`。恢复条件是收到上述三项交付，而不是重复或猜测远程连接。
+- 远程检查点：用户已授权使用本机 `sensecore` SSH 别名。2026-07-30 的只读检查确认 `/data/PTM`、两个只读输入和 PID 文件均存在；PID `3542592` 正运行 `python PTMv2/scr/smoke_oof.py --config PTMv2/config/project.yaml`，58 分钟时单 CPU 核约 99%，结果 CSV 尚不存在。时间戳日志显示 13:02 UTC 开始、13:40 UTC 已完成 10/50 折；这表明运行器版本与日志重定向均正确。日志中的 sklearn `penalty` 弃用警告不改变冻结参数或计算含义。作业状态已知，决策是不重启，恢复自动化为 `active_remote_e2_2_running` 并监控其原日志。
