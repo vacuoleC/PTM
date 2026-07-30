@@ -20,6 +20,7 @@ paths:
 
 runtime:
   python_executable: "D:\\enviranment\\ptm-encoder\\python.exe"
+  remote_python_command: "python"
   random_seed: 0
 
 monitoring:
@@ -27,6 +28,14 @@ monitoring:
   long_task_progress_interval: 10
   remote_project_root: "/data/PTM"
   remote_log_directory: "/data/PTM/logs"
+  e2_2_smoke_job_name: "e2_2_fixed_parameter_oof_smoke"
+
+e2_2_smoke:
+  detection_threshold: 0.1
+  classifier_C: 0.1
+  classifier_l1_ratio: 0.5
+  outer_assignments: "outputs/tables/e2_2_outer_split_assignments.csv"
+  output: "outputs/tables/e2_2_fixed_parameter_oof_smoke.csv"
 
 audit_outputs:
   cohort_summary: "outputs/tables/e1_1_cohort_label_audit.csv"

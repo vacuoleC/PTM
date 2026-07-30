@@ -1,19 +1,66 @@
-"""Run a fixed-parameter OOF smoke check over the frozen outer splits."""
+"""Run the configuration-controlled fixed-parameter E2.2 OOF smoke check."""
+import argparse
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
-import pandas as pd
-sys.path.insert(0,str(Path(__file__).parent))
-from evaluate import fit_score_fold
-from oof import initialise_oof,record_fold_scores
 
-root=Path(__file__).parents[1]
-x=pd.read_pickle(root/'../PTMv1/outputs/lscc_multi_ptm_resid.pkl.gz')
-y=pd.read_csv(root/'../PTMv1/outputs/lscc_grade_g2_vs_g3_labels.csv').set_index('patient_id')
-a=pd.read_csv(root/'outputs/tables/e2_2_outer_split_assignments.csv')
-o=initialise_oof(a)
-for fold in sorted(o.fold.unique()):
- tr=a[(a.fold==fold)&(a.role=='train')].patient_id; te=a[(a.fold==fold)&(a.role=='test')].patient_id
- s=fit_score_fold(x.loc[tr],y.loc[tr,'target'],x.loc[te],.1,.1,.5)
- o=record_fold_scores(o,fold,te,s)
- print(f'[E2.2] completed fold {fold+1}/50',flush=True)
-out=root/'outputs/tables/e2_2_fixed_parameter_oof_smoke.csv';o.to_csv(out,index=False);print(out,flush=True)
+import pandas as pd
+import yaml
+
+sys.path.insert(0, str(Path(__file__).parent))
+from evaluate import fit_score_fold
+from oof import initialise_oof, record_fold_scores
+
+
+def timestamp() -> str:
+    """Return an ISO timestamp for long-task log monitoring."""
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def main(config_path: Path) -> None:
+    """Score all frozen outer test folds without fitting on their test patients."""
+    config_path = config_path.resolve()
+    root = config_path.parents[1]
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    paths = config["paths"]
+    settings = config["e2_2_smoke"]
+    interval = config["monitoring"]["long_task_progress_interval"]
+
+    X = pd.read_pickle(root / paths["source_matrix"])
+    y = pd.read_csv(root / paths["source_labels"]).set_index("patient_id")
+    assignments = pd.read_csv(root / settings["outer_assignments"])
+    oof = initialise_oof(assignments)
+    folds = sorted(oof.fold.unique())
+    print(f"{timestamp()} [E2.2] start: {len(folds)} frozen outer folds", flush=True)
+
+    for ordinal, fold in enumerate(folds, start=1):
+        train_ids = assignments.loc[
+            (assignments.fold == fold) & (assignments.role == "train"), "patient_id"
+        ]
+        test_ids = assignments.loc[
+            (assignments.fold == fold) & (assignments.role == "test"), "patient_id"
+        ]
+        scores = fit_score_fold(
+            X.loc[train_ids],
+            y.loc[train_ids, "target"],
+            X.loc[test_ids],
+            settings["detection_threshold"],
+            settings["classifier_C"],
+            settings["classifier_l1_ratio"],
+        )
+        oof = record_fold_scores(oof, fold, test_ids, scores)
+        if ordinal % interval == 0 or ordinal == len(folds):
+            print(f"{timestamp()} [E2.2] completed fold {ordinal}/{len(folds)}", flush=True)
+
+    output = root / settings["output"]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    oof.to_csv(output, index=False)
+    print(f"{timestamp()} [E2.2] complete: wrote {output}", flush=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config", type=Path, default=Path(__file__).parents[1] / "config" / "project.yaml"
+    )
+    main(parser.parse_args().config)
