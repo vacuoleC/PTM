@@ -26,9 +26,13 @@ runtime:
 monitoring:
   heartbeat_interval_minutes: 30
   long_task_progress_interval: 10
+  remote_ssh_alias: "sensecore"
   remote_project_root: "/data/PTM"
   remote_log_directory: "/data/PTM/logs"
   e2_2_smoke_job_name: "e2_2_fixed_parameter_oof_smoke"
+  e2_2_smoke_pid_file: "/data/PTM/logs/e2_2_fixed_parameter_oof_smoke.pid"
+  e2_2_smoke_log_file: "/data/PTM/logs/e2_2_fixed_parameter_oof_smoke.log"
+  e2_2_smoke_output_file: "/data/PTM/PTMv2/outputs/tables/e2_2_fixed_parameter_oof_smoke.csv"
 
 e2_2_smoke:
   detection_threshold: 0.1

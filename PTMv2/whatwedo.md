@@ -183,7 +183,7 @@ E7  最终可复现交付与执行对比报告
 - 结果怎么样：已生成并列出 9 个包内文件，SHA256 为 `800c70f444dbcf1c2aff37f83392054ea02509e925411d11cee1fa25a68401a4`。本地已通过 Python 编译、`--help` 调用、tar 成员清单和 diff 空白检查；尚未运行任何一折，因此没有新的模型性能结论。
 - 证据与决策：`releases/e2_2_remote_oof_bundle.tar.gz`、`remote/E2_2_REMOTE_RUN.md`、`scr/build_e2_2_remote_bundle.py`、`scr/smoke_oof.py`、日志 E2.2.d。将包推送 GitHub 后，由用户在 `/data/PTM` 的既有 `ptm-encoder` 环境执行；需要返回 OOF CSV、完整运行日志和三条核验命令输出。本地在收到这些交付后才核验、记录结果并继续 E2.2。
 - 状态同步：运行包提交 `54d9379` 已推送；机器状态从等待 SSH 连接改为 `blocked_pending_remote_result`。恢复条件是收到上述三项交付，而不是重复或猜测远程连接。
-- 远程检查点：用户已授权使用本机 `sensecore` SSH 别名。2026-07-30 的只读检查确认 `/data/PTM`、两个只读输入和 PID 文件均存在；PID `3542592` 正运行 `python PTMv2/scr/smoke_oof.py --config PTMv2/config/project.yaml`，58 分钟时单 CPU 核约 99%，结果 CSV 尚不存在。时间戳日志显示 13:02 UTC 开始、13:40 UTC 已完成 10/50 折；这表明运行器版本与日志重定向均正确。日志中的 sklearn `penalty` 弃用警告不改变冻结参数或计算含义。作业状态已知，决策是不重启，恢复自动化为 `active_remote_e2_2_running` 并监控其原日志。
+- 远程检查点：用户已授权使用本机 `sensecore` SSH 别名。2026-07-30 的只读检查确认 `/data/PTM`、两个只读输入和 PID 文件均存在；PID `3542592` 正运行 `python PTMv2/scr/smoke_oof.py --config PTMv2/config/project.yaml`，约 76 分钟时单 CPU 核约 99%，结果 CSV 尚不存在。时间戳日志显示 13:02 UTC 开始、13:40 UTC 已完成 10/50 折、14:16 UTC 已完成 20/50 折；这表明运行器版本与日志重定向均正确。日志中的 sklearn `penalty` 弃用警告不改变冻结参数或计算含义。作业状态已知，决策是不重启，恢复自动化为 `active_remote_e2_2_running` 并监控其原日志。
 
 #### E2.2.e — 固定 OOF 结果完整性验证器
 
@@ -200,3 +200,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：在验证器之后按冻结 fold 编号计算 AUPRC、测试集大小和阳性数；以 `fold // 5` 记录重复编号。输出路径在 `project.yaml` 配置，汇总器拒绝跳过验证器。
 - 结果怎么样：标准库单元测试 1/1 通过，Python 编译检查通过；真实 OOF 尚未完成，故没有报告性能数值。
 - 证据与决策：`scr/summarise_e2_2_oof.py`、`tests/test_summarise_e2_2_oof.py`、日志 E2.2.f。通过测试后等待真实 CSV，再生成正式每折表。
+
+#### E2.2.g — 配置化远程作业只读监控器
+
+- 父事件：E2.2；同级比较组：E2.2.a–f；状态：已完成
+- 为什么做：长任务规则要求监控由配置控制并能将可解释状态写入本地日志；此前人工 SSH 命令可验证但容易产生 PowerShell 转义差异，且不构成可复现工具。
+- 怎么做：将 SSH 别名、PID、日志与输出路径加入 `project.yaml`；新增 `monitor_e2_2_remote.py`，固定为 SSH BatchMode 的只读进程/日志/文件哈希查询，并以制表符字段解析结果。它不包含启动、终止、删除或远程写入逻辑。
+- 结果怎么样：标准库解析测试 1/1 通过、Python 编译检查通过，并已对 PID `3542592` 成功执行真实只读调用；调用确认 14:16 UTC 已完成 20/50 折且 CSV 尚不存在。不改变已运行的作业。
+- 证据与决策：`scr/monitor_e2_2_remote.py`、`tests/test_monitor_e2_2_remote.py`、日志 E2.2.g。后续心跳应调用该脚本作为统一监控入口，并在输出出现时转入本地验证器。
