@@ -32,10 +32,18 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 from nested_raw_elasticnet import nested_oof, parameter_grid
 
+_WORKER_STATE: tuple | None = None
 
-def _run_one(perm_index: int, args: tuple) -> float:
-    """Run one permutation in a worker process; returns the null AUPRC."""
-    X, y, assignments, candidates, inner_splits, random_seed = args
+
+def _init_worker(X, y, assignments, candidates, inner_splits, random_seed):
+    """Share the (large) frozen inputs once per worker instead of per task."""
+    global _WORKER_STATE
+    _WORKER_STATE = (X, y, assignments, candidates, inner_splits, random_seed)
+
+
+def _run_one(perm_index: int) -> float:
+    """Run one permutation in a worker; returns the null AUPRC."""
+    X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
     permuted = y.copy()
     rng = np.random.default_rng(random_seed + perm_index)
     permuted.iloc[:] = rng.permutation(permuted.to_numpy())
@@ -103,10 +111,11 @@ def run_permutation_null(
         return null_df, observed_auprc, p_value
 
     payload = (X, y, assignments, candidates, inner_splits, random_seed)
+    _init_worker(*payload)  # serial path needs the same shared state
     null_scores: list[dict] = []
     if n_jobs <= 1 or len(remaining) == 1:
         for idx, perm_index in enumerate(remaining):
-            auprc = _run_one(perm_index, payload)
+            auprc = _run_one(perm_index)
             null_scores.append({"permutation": perm_index, "auprc": auprc})
             if checkpoint is not None:
                 _append_checkpoint(checkpoint, perm_index, auprc)
@@ -115,8 +124,8 @@ def run_permutation_null(
                 print("max-hours reached; stopping gracefully", flush=True)
                 break
     else:
-        with mp.Pool(processes=n_jobs) as pool:
-            for perm_index, auprc in zip(remaining, pool.starmap(_run_one, [(p, payload) for p in remaining])):
+        with mp.Pool(processes=n_jobs, initializer=_init_worker, initargs=payload) as pool:
+            for perm_index, auprc in zip(remaining, pool.imap_unordered(_run_one, remaining, chunksize=1)):
                 null_scores.append({"permutation": perm_index, "auprc": auprc})
                 if checkpoint is not None:
                     _append_checkpoint(checkpoint, perm_index, auprc)
@@ -124,6 +133,7 @@ def run_permutation_null(
                 if max_hours is not None and (time.monotonic() - start) / 3600 >= max_hours:
                     print("max-hours reached; stopping gracefully", flush=True)
                     pool.terminate()
+                    pool.join()
                     break
 
     completed_df = pd.read_csv(checkpoint) if checkpoint is not None and checkpoint.exists() else pd.DataFrame(null_scores)
