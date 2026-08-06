@@ -235,3 +235,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：本地 config 远程 python 路径修正为 `/root/anaconda3/envs/ptm-encoder/bin/python`；推送后远程从 origin 检出 scr；远程 `pip install umap-learn`。
 - 结果怎么样：远程 `scr/` 已从 origin/main 检出 `nested_raw_elasticnet.py`、`run_raw_nested.py`、`monitor_e2_2_remote.py`、`validate_e2_2_oof.py`、`summarise_e2_2_oof.py`（远程 import 验证 OK，sklearn 1.9.0）；远程 `ptm-encoder` 已补装 `umap-learn 0.5.12`（导入验证 OK）；远程 python 路径已修正为 `/root/anaconda3/envs/ptm-encoder/bin/python`（提交 `49e18e3`）。冻结前核查阻塞项全部解决。
 - 证据与决策：本记录与对应提交；完成后远程 `ls scr` 与 `umap` 导入验证。
+
+### E3.1.2 — 受监督项目物化完成（build-supervised-project 0.1.2）
+
+- 父事件：E0（治理重构）；状态：已完成
+- 为什么做：将 PTMv2 从自制 Codex 监督器迁移到 build-supervised-project 受监督治理（新插件 0.1.2）。
+- 怎么做：5 轮访谈冻结设计（哈希 fd818bf4...）→ 五层校验 pass → 物化（git 59962ed）→ 适配器安装（claude-code + codex，installed_inactive）。
+- 结果怎么样：Controller Skill `skills/ptmv2-supervised-refactor-controller/` 生成；`monitor.yaml`/`whatwedo.jsonl`/`project_design.yaml`/`modules/` 落盘；远程脚本同步 + umap 补装 + 远程 python 路径修正全部完成（E3.1.1）。适配器探测为 `installed_inactive`（trust_pending，宿主钩子未触发回执）。
+- 证据与决策：候选 563922fd，物化提交 59962ed，注册表 9f3d7c2e-1b5a-4e6d-8f2a-3c7b9d1e4a56。下一步：加载 `ptmv2-supervised-refactor-controller` 继续 E3.1 置换 null。
