@@ -233,5 +233,5 @@ E7  最终可复现交付与执行对比报告
 - 父事件：E3.1；状态：进行中
 - 为什么做：新插件（build-supervised-project 0.1.2）访谈冻结前核查发现：远程 `/data/PTM/PTMv2/scr/` 缺少 `nested_raw_elasticnet.py`、`run_raw_nested.py`、`monitor_e2_2_remote.py`、`validate_e2_2_oof.py`、`summarise_e2_2_oof.py`；远程 `ptm-encoder` 缺 `umap`；远程 python 路径指向 Windows 本机路径。E3.1 置换 null 需要远程执行完整主管线，先同步脚本与补装依赖。
 - 怎么做：本地 config 远程 python 路径修正为 `/root/anaconda3/envs/ptm-encoder/bin/python`；推送后远程从 origin 检出 scr；远程 `pip install umap-learn`。
-- 结果怎么样：待同步/补装完成后再记录。
+- 结果怎么样：远程 `scr/` 已从 origin/main 检出 `nested_raw_elasticnet.py`、`run_raw_nested.py`、`monitor_e2_2_remote.py`、`validate_e2_2_oof.py`、`summarise_e2_2_oof.py`（远程 import 验证 OK，sklearn 1.9.0）；远程 `ptm-encoder` 已补装 `umap-learn 0.5.12`（导入验证 OK）；远程 python 路径已修正为 `/root/anaconda3/envs/ptm-encoder/bin/python`（提交 `49e18e3`）。冻结前核查阻塞项全部解决。
 - 证据与决策：本记录与对应提交；完成后远程 `ls scr` 与 `umap` 导入验证。
