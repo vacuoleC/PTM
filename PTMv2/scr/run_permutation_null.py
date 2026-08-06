@@ -27,8 +27,10 @@ import yaml
 from sklearn.metrics import average_precision_score
 
 # Each worker pins OpenBLAS to one thread; parallelism comes from processes.
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("OMP_NUM_THREADS", "1")
+# Force the override (not setdefault) so a remote global setting (e.g. bashrc
+# OPENBLAS_NUM_THREADS=8) cannot let workers spawn 60*8 threads and thrash.
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
 
 from nested_raw_elasticnet import nested_oof, parameter_grid
 
