@@ -12,3 +12,10 @@ __pycache__/
 # Large or externally retained artifacts
 outputs/*_frozen_encoder.pt
 data/qptm/
+
+# Pre-refactor untracked reference images (not part of v2 governance)
+image.png
+image-1.png
+
+# Local pre-refactor backup snapshot
+backups/
