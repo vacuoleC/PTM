@@ -259,3 +259,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：`run_permutation_null.py` 改造为 `--n-jobs`（multiprocessing.Pool，每进程 OPENBLAS_NUM_THREADS=1）+ `--checkpoint`（逐行追加）+ `--max-hours`（优雅超时）+ 恢复自动跳过已完成（随机性仅依赖 seed+index，可复现）；单元测试 5/5 通过（含多进程与串行一致性）。
 - 结果怎么样：远程 190 路并行作业已启动（python pid 3787477，setsid 脱离 SSH），先跑串行观察值嵌套（约 4h）再并行置换；估算总时长约 22h（观察值 4h + 500 置换/190 并行 ≈ 18h），在 24h 上限内。子代理已启动每 10 分钟监控。
 - 证据与决策：提交 `3c2c98c`（并行化改造+测试+远程说明）；bundle SHA256 `2d43c0f3...`。下一步：子代理监控直至 checkpoint 501 行，然后 E3.1-S4 校验回传。
+
+### E3.1 — 并行改造审查修复与远程测速烟雾（代码审查反馈落实）
+
+- 父事件：E3；状态：进行中（远程 3 置换烟雾测试运行中）
+- 为什么做：代码审查发现并行脚本两个真实缺陷——坑1：`pool.starmap` 每任务重 pickle 148MB X 矩阵（应 initializer 共享）；坑2：`max-hours` 到点 `terminate()` 后 `starmap` 阻塞收集抛异常（应 `imap_unordered` 逐条处理）。
+- 怎么做：改为 `Pool(initializer=_init_worker, initargs=...)`（X 只序列化一次，worker 全局持有，任务只传 perm_index）；`imap_unordered` + `terminate/join` 优雅退出；串行分支同步设置 worker state。远程跑 3 置换×3 核烟雾测速校准。
+- 结果怎么样：本地 5/5 测试通过（含多进程与串行一致性）；远程探针实测单次 saga 拟合 266.5s（106 病人 60534 特征），估算单置换约 9.6h、190 并行 500 次约 25h（略超 24h，可能需 2 批接力）；3 置换烟雾测试（pid 3790064）运行中，子代理监控测速。
+- 证据与决策：提交 `5b446a3`（initializer 修复+探针脚本）；bundle 待烟雾后重建。下一步：烟雾完成后校准 --n-jobs 与批次数，再启动全量。
