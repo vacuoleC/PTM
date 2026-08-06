@@ -251,3 +251,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：新增 `scr/run_permutation_null.py`（置换标签→复用 `nested_oof`→null AUPRC→经验 p 值）与 `tests/test_run_permutation_null.py`（4/4 通过）；新增 `scr/build_e3_1_remote_bundle.py` 构建远程包。
 - 结果怎么样：本地实现+单元测试 4/4 通过；3 置换烟雾测试因本地 BLAS 崩溃中止（根因已确认）；远程包 `releases/e3_1_permutation_null_bundle.tar.gz`（SHA256 `c8ce64e3...`，7 文件，无原始数据）构建成功。
 - 证据与决策：`scr/run_permutation_null.py`、`tests/test_run_permutation_null.py`、`scr/build_e3_1_remote_bundle.py`、`remote/E3_1_REMOTE_RUN.md`、`releases/e3_1_permutation_null_bundle.tar.gz`。下一步 E3.1-S3：远程部署+启动 500 次置换。
+
+### E3.1 — 远程置换作业启动（E3.1-S3）与并行改造
+
+- 父事件：E3；状态：进行中（远程作业运行中）
+- 为什么做：单核跑法估算 500 次置换约 146 天远超 24h 上限；远程实际为 192 核/2TB（Xeon 8468V），必须并行化。
+- 怎么做：`run_permutation_null.py` 改造为 `--n-jobs`（multiprocessing.Pool，每进程 OPENBLAS_NUM_THREADS=1）+ `--checkpoint`（逐行追加）+ `--max-hours`（优雅超时）+ 恢复自动跳过已完成（随机性仅依赖 seed+index，可复现）；单元测试 5/5 通过（含多进程与串行一致性）。
+- 结果怎么样：远程 190 路并行作业已启动（python pid 3787477，setsid 脱离 SSH），先跑串行观察值嵌套（约 4h）再并行置换；估算总时长约 22h（观察值 4h + 500 置换/190 并行 ≈ 18h），在 24h 上限内。子代理已启动每 10 分钟监控。
+- 证据与决策：提交 `3c2c98c`（并行化改造+测试+远程说明）；bundle SHA256 `2d43c0f3...`。下一步：子代理监控直至 checkpoint 501 行，然后 E3.1-S4 校验回传。
