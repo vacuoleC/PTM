@@ -243,3 +243,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：5 轮访谈冻结设计（哈希 fd818bf4...）→ 五层校验 pass → 物化（git 59962ed）→ 适配器安装（claude-code + codex，installed_inactive）。
 - 结果怎么样：Controller Skill `skills/ptmv2-supervised-refactor-controller/` 生成；`monitor.yaml`/`whatwedo.jsonl`/`project_design.yaml`/`modules/` 落盘；远程脚本同步 + umap 补装 + 远程 python 路径修正全部完成（E3.1.1）。适配器探测为 `installed_inactive`（trust_pending，宿主钩子未触发回执）。
 - 证据与决策：候选 563922fd，物化提交 59962ed，注册表 9f3d7c2e-1b5a-4e6d-8f2a-3c7b9d1e4a56。下一步：加载 `ptmv2-supervised-refactor-controller` 继续 E3.1 置换 null。
+
+### E3.1 — 置换 null 运行器实现与远程包（E3.1-S1/S2 完成）
+
+- 父事件：E3；状态：进行中（本地实现完成，远程作业待启动）
+- 为什么做：主推断要求每次置换重跑完整嵌套管线；本地高维 `saga` 拟合后的 `predict_proba` 触发 Windows BLAS 崩溃（`0xc06d007f`，E2.2.b 根因同源），确认完整评估必须远程执行。
+- 怎么做：新增 `scr/run_permutation_null.py`（置换标签→复用 `nested_oof`→null AUPRC→经验 p 值）与 `tests/test_run_permutation_null.py`（4/4 通过）；新增 `scr/build_e3_1_remote_bundle.py` 构建远程包。
+- 结果怎么样：本地实现+单元测试 4/4 通过；3 置换烟雾测试因本地 BLAS 崩溃中止（根因已确认）；远程包 `releases/e3_1_permutation_null_bundle.tar.gz`（SHA256 `c8ce64e3...`，7 文件，无原始数据）构建成功。
+- 证据与决策：`scr/run_permutation_null.py`、`tests/test_run_permutation_null.py`、`scr/build_e3_1_remote_bundle.py`、`remote/E3_1_REMOTE_RUN.md`、`releases/e3_1_permutation_null_bundle.tar.gz`。下一步 E3.1-S3：远程部署+启动 500 次置换。
