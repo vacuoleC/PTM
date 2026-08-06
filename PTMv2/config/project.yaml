@@ -20,7 +20,7 @@ paths:
 
 runtime:
   python_executable: "D:\\enviranment\\ptm-encoder\\python.exe"
-  remote_python_command: "python"
+  remote_python_command: "/root/anaconda3/envs/ptm-encoder/bin/python"
   random_seed: 0
 
 monitoring:

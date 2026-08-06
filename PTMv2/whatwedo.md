@@ -227,3 +227,11 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：全局 Hook 识别项目 `automation_state` 中带数字的状态名；当状态以 `active_remote_` 开头时，所有 Stop 均放行，由已存在的周期心跳继续远程轮询。以两条模拟 Stop 载荷验证并修复状态正则的数字匹配。
 - 结果怎么样：远程监控状态的首次与重复 Stop 均返回 `continue: true`；普通 active 状态仍保持续跑。心跳不会被停止，因此远程作业继续按计划监控而不发生即时空转。
 - 证据与决策：`C:\Users\29474\.codex\hooks\automation_supervisor.py`、日志 E0.4.c。此全局运行时修复不属于 PTM Git；项目账本记录其可审计行为。
+
+### E3.1.1 — 远程主管线脚本同步与 UMAP 补装（受监督项目冻结前核查）
+
+- 父事件：E3.1；状态：进行中
+- 为什么做：新插件（build-supervised-project 0.1.2）访谈冻结前核查发现：远程 `/data/PTM/PTMv2/scr/` 缺少 `nested_raw_elasticnet.py`、`run_raw_nested.py`、`monitor_e2_2_remote.py`、`validate_e2_2_oof.py`、`summarise_e2_2_oof.py`；远程 `ptm-encoder` 缺 `umap`；远程 python 路径指向 Windows 本机路径。E3.1 置换 null 需要远程执行完整主管线，先同步脚本与补装依赖。
+- 怎么做：本地 config 远程 python 路径修正为 `/root/anaconda3/envs/ptm-encoder/bin/python`；推送后远程从 origin 检出 scr；远程 `pip install umap-learn`。
+- 结果怎么样：待同步/补装完成后再记录。
+- 证据与决策：本记录与对应提交；完成后远程 `ls scr` 与 `umap` 导入验证。
