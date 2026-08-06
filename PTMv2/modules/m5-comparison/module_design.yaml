@@ -1,0 +1,80 @@
+acceptance_criteria:
+- E4.1 raw + Elastic Net（主）完成。
+- E4.2 PCA + Elastic Net（主）完成。
+- E4.3 TruncatedSVD + 校准线性 SVM（探索）完成。
+- E4.4 训练折内 UMAP + Elastic Net（探索）完成。
+- 主比较用配对重复 OOF AUPRC 差异；探索结果不改变主结论。
+budget_scope:
+- time
+- compute
+deliverable_uids:
+- d2-4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e
+dependencies:
+- m4-modelability
+environment_ids:
+- ENV-LOCAL
+- ENV-REMOTE
+events:
+- acceptance_criteria:
+  - 27 个预注册组合内层选择
+  - 10 重复 pooled OOF AUPRC
+  dependencies:
+  - E3.1
+  event_id: E4.1
+  first_wave_subtasks: []
+  goal: 原始特征 + Elastic Net（主）
+  inputs:
+  - lscc_multi_ptm_residuals
+  - lscc_g2_g3_labels
+  outputs:
+  - primary_model_oof_scores.csv
+  split_rule: patient-level nested CV
+- acceptance_criteria:
+  - PCA 维数 [10,20,40] 内层选择
+  - 10 重复 pooled OOF AUPRC
+  dependencies:
+  - E3.1
+  event_id: E4.2
+  first_wave_subtasks: []
+  goal: PCA + Elastic Net（主）
+  inputs:
+  - lscc_multi_ptm_residuals
+  - lscc_g2_g3_labels
+  outputs:
+  - primary_model_oof_scores.csv
+  split_rule: patient-level nested CV
+- acceptance_criteria:
+  - 校准在训练折内完成
+  - 探索性结果不改变主结论
+  dependencies:
+  - E3.1
+  event_id: E4.3
+  first_wave_subtasks: []
+  goal: TruncatedSVD + 校准线性 SVM（探索）
+  inputs:
+  - lscc_multi_ptm_residuals
+  - lscc_g2_g3_labels
+  outputs:
+  - exploratory-model-scores
+  split_rule: patient-level nested CV
+- acceptance_criteria:
+  - 每个训练折单独拟合 UMAP 后转换测试折
+  - umap 已在远程环境安装（0.5.12）
+  dependencies:
+  - E3.1
+  event_id: E4.4
+  first_wave_subtasks: []
+  goal: 训练折内 UMAP + Elastic Net（探索）
+  inputs:
+  - lscc_multi_ptm_residuals
+  - lscc_g2_g3_labels
+  outputs:
+  - exploratory-model-scores
+  split_rule: patient-level nested CV
+goal: 同级模型比较（E4）
+module_id: m5-comparison
+module_uid: ddf002bb-5556-497f-b765-bd63c9468420
+permission_scope:
+- filesystem
+- commands
+- remote_compute_start

@@ -1,0 +1,398 @@
+budgets:
+  attempts: 预注册候选网格（raw 27 组合、pca 27 组合等），不无限扩展
+  compute: 远程 sensecore 无上限
+  money: 0（无付费 API/服务）
+  network: GitHub push/pull + SSH 低频，无上限
+  storage: 无上限（PTMv2 产物体积小）
+  time: 单次作业 24 小时上限（远程）；对话回合无硬上限
+  tokens: 无上限
+controller:
+  controller_revision: 1
+  path: skills/ptmv2-supervised-refactor-controller/SKILL.md
+  skill_name: ptmv2-supervised-refactor-controller
+deliverables:
+- acceptance_criteria:
+  - 包含主模型置换 p 值、学习曲线解读与可建模性结论（可建模/不可稳定建模/数据不足）。
+  - 由版本化脚本与配置可复现生成。
+  deliverable_uid: d1-9a3f2b5c-1d4e-4f6a-8b7c-2e5a9f1c3b7d
+  evidence_requirements:
+  - permutation-null-table
+  - learning-curve-table
+  format: markdown
+  required: true
+  review_policy: 主证据规则通过后审查；无数值图表价值的产物链接 diff/日志。
+  target_path: outputs/reports/modelability_audit.md
+  validators:
+  - script-validator-0.1.0
+- acceptance_criteria:
+  - 包含 10 次重复 pooled OOF AUPRC 与每折记录，可配对比较。
+  - 经 validate_e2_2_oof.py 完整性验证。
+  deliverable_uid: d2-4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e
+  evidence_requirements:
+  - oof-scores-table
+  format: csv
+  required: true
+  review_policy: 以重复为独立样本，不以五折为独立样本。
+  target_path: outputs/tables/primary_model_oof_scores.csv
+  validators:
+  - validate_e2_2_oof-0.1.0
+- acceptance_criteria:
+  - 包含 500 次完整主管线置换 null 分布、观察值、经验 p 值（(1+count(null>=obs))/(1+500)）。
+  deliverable_uid: d3-1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f
+  evidence_requirements:
+  - permutation-null-table
+  format: csv
+  required: true
+  review_policy: 置换须重跑完整预处理+内层选择+外层预测。
+  target_path: outputs/tables/primary_model_permutation_null.csv
+  validators:
+  - permutation-validator-0.1.0
+- acceptance_criteria:
+  - 包含 50%/70%/100% 训练分数 × 10 重复的 OOF AUPRC。
+  - 每分数保留内层分层验证。
+  deliverable_uid: d4-2e3f4a5b-6c7d-8e9f-0a1b-2c3d4e5f6a7b
+  evidence_requirements:
+  - learning-curve-table
+  format: csv
+  required: true
+  review_policy: 学习曲线平坦仅表示当前设计下未观察到增益，不断言标签噪声。
+  target_path: outputs/tables/primary_model_learning_curve.csv
+  validators:
+  - learning-curve-validator-0.1.0
+- acceptance_criteria:
+  - 记录当前失败边界、学习曲线支持的数据需求、所需真实配对条件与可能数据来源。
+  - 给出 encoder 重新开门判定（仅当计量兼容无标签预训练来源或学习曲线显示稳定增益）。
+  deliverable_uid: d5-3f4a5b6c-7d8e-9f0a-1b2c-3d4e5f6a7b8c
+  evidence_requirements:
+  - learning-curve-table
+  - failure-boundary-notes
+  format: markdown
+  required: true
+  review_policy: 重新开门不依据训练损失下降、t-SNE 分图或更强 GPU。
+  target_path: outputs/reports/data_roadmap.md
+  validators:
+  - roadmap-validator-0.1.0
+- acceptance_criteria:
+  - 纵向事件树、同级任务对比、关键决策与失败分支。
+  - 可从版本化 whatwedo.md 与本地 .log/ 重建。
+  deliverable_uid: d6-4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d
+  evidence_requirements:
+  - event-tree-visualization
+  - task-comparison-table
+  format: markdown
+  required: true
+  review_policy: 失败分支不得抹去。
+  target_path: outputs/reports/v2_execution_comparison.md
+  validators:
+  - comparison-validator-0.1.0
+- acceptance_criteria:
+  - 同级任务的目标、方法、数据、资源、指标、证据强度与结论。
+  - 事件树可视化由版本化脚本生成。
+  deliverable_uid: d7-5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e
+  evidence_requirements:
+  - task-comparison-table
+  - event-tree-visualization
+  format: csv+svg
+  required: true
+  review_policy: 事件树可视化优先 SVG；无数值图表价值的配置/重构链接 diff。
+  target_path: outputs/tables/v2_task_comparison.csv
+  validators:
+  - comparison-validator-0.1.0
+- acceptance_criteria:
+  - 每个数值结论有可复现脚本与测试；配置由 versioned config/project.yaml 管理。
+  deliverable_uid: d8-6c7d8e9f-0a1b-2c3d-4e5f-6a7b8c9d0e1f
+  evidence_requirements:
+  - unit-tests-passing
+  - config-frozen
+  format: code+config
+  required: true
+  review_policy: 配置、随机种子、拆分数、过滤阈值、模型参数全部版本化管理。
+  target_path: scr/+tests/+config/
+  validators:
+  - unittest-runner-0.1.0
+environments:
+- connection_method: local
+  credential_references:
+  - ~/.ssh/id_* (GitHub SSH key 与 sensecore SSH key)
+  data_retention_policy: versioned 产物保留于 Git；.log/ 本地追加式保留。
+  environment_id: ENV-LOCAL
+  environment_manager: conda
+  environment_type: control
+  host_alias: local-windows
+  interpreter: D:/enviranment/ptm-encoder/python.exe (Python 3)
+  network_policy_ref: network_permissions
+  os: Windows 11
+  path_mappings: []
+  project_path: D:/coding/PTM/PTMv2
+  resources:
+    cpu: unlimited
+    disk: unlimited
+    gpu: none
+    memory: unlimited
+  responsibility: 本地控制与开发：研究设计、脚本开发、单元测试、Git 原子提交与推送、远程作业编排与结果核验。
+  shell: Git Bash / PowerShell
+  writable_paths:
+  - D:/coding/PTM/PTMv2/outputs
+  - D:/coding/PTM/PTMv2/scr
+  - D:/coding/PTM/PTMv2/tests
+  - D:/coding/PTM/PTMv2/config
+  - D:/coding/PTM/PTMv2/data/processed
+  - D:/coding/PTM/PTMv2/remote
+  - D:/coding/PTM/PTMv2/releases
+- connection_method: ssh
+  credential_references:
+  - ~/.ssh/ (SSH key 已授权)
+  data_retention_policy: 远程运行日志保留于 /data/PTM/logs/；结果核验后回传本地。
+  environment_id: ENV-REMOTE
+  environment_manager: conda
+  environment_type: compute
+  host_alias: sensecore
+  interpreter: /root/anaconda3/envs/ptm-encoder/bin/python (Python 3.11)
+  network_policy_ref: network_permissions
+  os: Linux el9
+  path_mappings:
+  - D:/coding/PTM/PTMv2 -> /data/PTM/PTMv2
+  project_path: /data/PTM/PTMv2
+  resources:
+    cpu: unlimited
+    disk: unlimited
+    gpu: available
+    memory: unlimited
+  responsibility: 远程长任务计算：执行已本地原子提交并推送的脚本；输出写 /data/PTM/outputs；结果经 GitHub 回传。
+  shell: /bin/bash
+  writable_paths:
+  - /data/PTM
+  - /data/PTM/logs
+- connection_method: local
+  credential_references: []
+  data_retention_policy: PTMv1 保持 Git-ignored 本地只读归档。
+  environment_id: ENV-DATA
+  environment_manager: other
+  environment_type: data
+  host_alias: local-ptmv1-archive
+  interpreter: n/a
+  network_policy_ref: network_permissions
+  os: Windows 11
+  path_mappings: []
+  project_path: ../PTMv1
+  resources:
+    cpu: none
+    disk: none
+    gpu: none
+    memory: none
+  responsibility: 只读数据源归档；v1 输出仅作输入引用，永不修改或重新加入 Git。
+  shell: n/a
+  writable_paths: []
+final_acceptance:
+- 主模型（raw_elastic_net/pca_elastic_net）通过完整管线置换检验（p <= 0.05）且折外 AUPRC 高于随机基线 0.4528，报告可复现。
+- 或如实得出当前标签/数据量不可稳定建模的否定结论，并交付置换 null 与学习曲线证据。
+- 生成 outputs/reports/v2_execution_comparison.md（纵向事件树、同级任务对比、关键决策与失败分支）。
+- 生成 outputs/reports/data_roadmap.md 并给出 encoder 重新开门判定。
+- 生成 outputs/tables/primary_model_oof_scores.csv、primary_model_permutation_null.csv、primary_model_learning_curve.csv
+  与事件树产物（v2_task_comparison.csv、v2_event_tree.svg）。
+framework_adapters:
+- adapter_id: claude-code
+  required: true
+  required_capabilities:
+  - project_discovery
+  - startup_context
+  - stop_interception
+  - auto_continue
+  - pre_compact_checkpoint
+  - post_compact_recovery
+- adapter_id: codex
+  required: false
+  required_capabilities:
+  - project_discovery
+governance:
+  cancellation_rules:
+  - 仅用户显式要求或主证据规则确定违反时取消。
+  - 取消保留事件记录与证据，不删除失败分支。
+  change_request_rules:
+  - 任何对冻结 study_design.yaml 的修改（换标签、改拆分数、改统计规则）须经显式变更请求与重新批准。
+  - 任何设计或计划路径变更须重算哈希并再次请求批准。
+  pause_rules:
+  - '上下文/时间上限、真实阻塞或未知工作区变更时，先写 automation_state: blocked_<原因> 再暂停。'
+  - 远程交付由子代理监督，不依赖用户即时提供信息（用户可能不在场）。
+  - 不猜测、不覆盖未说明的工作区变更。
+  recovery_rules:
+  - 从 whatwedo.md + .log/ 检查点精确恢复；恢复前读完 plan/terminal/git 三类日志。
+  - 未知状态作业不重启；远程部分物化用原 workspace-instance-id 恢复。
+  - 恢复后先核验 outputs 再创建正式原子结果提交。
+  review_rules:
+  - 每个研究事件完成时在 whatwedo.md 记录'为什么做—怎么做—结果怎么样—证据与决策'。
+  - 量化结论必须附可复现证据（表/图/脚本）；无数值图表价值的配置/重构链接 diff 或日志。
+  - 关键检查点（置换 null 结果、主模型结论）在进入下一事件前接受审查。
+inputs:
+- format: pandas_pickle_gzip
+  input_id: lscc_multi_ptm_residuals
+  license: internal
+  path_or_reference: ../PTMv1/outputs/lscc_multi_ptm_resid.pkl.gz
+  provenance: v1 只读归档输出；PTM 残差矩阵（磷酸化+乙酰化），行含肿瘤与正常样本
+  read_only: true
+  scale: 212 rows x 91692 features
+  schema: data/manifest.tsv
+  sensitivity: restricted
+  sha256: 68a2074b1caa02c9c4f7b195a43522b472946c6dbe2d4b73bec81e4ba66970a1
+  version: v1
+- format: csv
+  input_id: lscc_g2_g3_labels
+  license: internal
+  path_or_reference: ../PTMv1/outputs/lscc_grade_g2_vs_g3_labels.csv
+  provenance: v1 只读归档输出；患者级 LSCC 分级标签（G2=58 目标0，G3=48 目标1）
+  read_only: true
+  scale: 106 patients x 4 columns
+  schema: data/manifest.tsv
+  sensitivity: restricted
+  sha256: 53ef7505d5bcc25de2c4057918dc039fc422e8eca9dba0ba1d83ed332e38161b
+  version: v1
+- format: csv
+  input_id: v1_encoder_necessity_summary
+  license: internal
+  path_or_reference: ../PTMv1/outputs/lscc_grade_g2_vs_g3_encoder_necessity_summary.csv
+  provenance: v1 只读参考；encoder 与 PCA 对比摘要，非 v2 模型输入
+  read_only: true
+  scale: reference result
+  schema: data/manifest.tsv
+  sensitivity: internal
+  sha256: db9a5ef547c2cf9a232900bfab4addad3b84890ec2a38585875a1ba692efd36a
+  version: v1
+- format: csv
+  input_id: v1_repeated_xgboost_scores
+  license: internal
+  path_or_reference: ../PTMv1/outputs/lscc_grade_g2_vs_g3_repeated_xgboost_scores.csv
+  provenance: v1 只读参考；重复交叉验证基线证据，非 v2 模型输入
+  read_only: true
+  scale: reference result
+  schema: data/manifest.tsv
+  sensitivity: internal
+  sha256: 215241c48efb411e23b9da770b60633c7135d32b49a22ff57ab7db53a7e15093
+  version: v1
+- format: csv
+  input_id: v1_encoder_feature_manifest
+  license: internal
+  path_or_reference: ../PTMv1/outputs/lscc_grade_g2_vs_g3_encoder_feature_manifest.csv
+  provenance: v1 只读参考；encoder 共同特征清单，仅用于溯源比较
+  read_only: true
+  scale: reference metadata
+  schema: data/manifest.tsv
+  sensitivity: internal
+  sha256: 73837173c337dca6243807e051791dda3bd037b962bf37e3e5c22bc63378baca
+  version: v1
+modules:
+- dependencies: []
+  module_id: m1-governance
+  module_uid: 5d895033-042b-46f8-a6d0-915e72150bf0
+  path: modules/m1-governance/module_design.yaml
+- dependencies:
+  - m1-governance
+  module_id: m2-data-audit
+  module_uid: 0e10768e-4676-478c-ac7d-b32d6fe5c197
+  path: modules/m2-data-audit/module_design.yaml
+- dependencies:
+  - m2-data-audit
+  module_id: m3-pipeline
+  module_uid: 93deb2e5-ceae-4952-a2b6-928e9c1af327
+  path: modules/m3-pipeline/module_design.yaml
+- dependencies:
+  - m3-pipeline
+  module_id: m4-modelability
+  module_uid: 5c331010-a1ce-4e65-81df-a4a68261cac7
+  path: modules/m4-modelability/module_design.yaml
+- dependencies:
+  - m4-modelability
+  module_id: m5-comparison
+  module_uid: ddf002bb-5556-497f-b765-bd63c9468420
+  path: modules/m5-comparison/module_design.yaml
+- dependencies:
+  - m4-modelability
+  - m5-comparison
+  module_id: m6-roadmap
+  module_uid: 1066ba92-0dcb-43b9-9c42-cce6c189af13
+  path: modules/m6-roadmap/module_design.yaml
+- dependencies:
+  - m4-modelability
+  module_id: m7-multiview
+  module_uid: 0f8d51f1-dff7-432c-941d-42770af07448
+  path: modules/m7-multiview/module_design.yaml
+- dependencies:
+  - m4-modelability
+  - m5-comparison
+  - m6-roadmap
+  module_id: m8-delivery
+  module_uid: b563d619-c8d4-45ec-b109-38158d916223
+  path: modules/m8-delivery/module_design.yaml
+network_permissions:
+  dependency_installation:
+    allowed_scope:
+    - ptm-encoder-env-local
+    - ptm-encoder-env-remote
+    approval_rule: allowed
+    data_level: internal
+  free_api:
+    allowed_scope:
+    - github-api
+    approval_rule: allowed
+    data_level: public
+  literature_and_web_search:
+    allowed_scope:
+    - research-background
+    approval_rule: allowed
+    data_level: public
+  paid_api:
+    allowed_scope: []
+    approval_rule: blocked
+    data_level: none
+  private_remote_service:
+    allowed_scope:
+    - sensecore-ssh
+    approval_rule: allowed
+    data_level: internal
+  project_data_upload:
+    allowed_scope:
+    - github-push
+    - remote-data-ptm
+    approval_rule: allowed
+    data_level: internal
+  public_data_download:
+    allowed_scope:
+    - data-roadmap-sourcing
+    approval_rule: allowed
+    data_level: public
+  remote_compute_start:
+    allowed_scope:
+    - sensecore-long-tasks
+    approval_rule: allowed
+    data_level: internal
+permissions:
+  commands:
+  - git add/commit/push (vacuoleC/PTM, main)
+  - python / D:/enviranment/ptm-encoder/python.exe (本地)
+  - ssh sensecore BatchMode 只读/执行远程脚本
+  - '远程 python: /root/anaconda3/envs/ptm-encoder/bin/python'
+  - pytest/unittest 测试
+  dependency_changes:
+  - pip install umap-learn (remote, done)
+  - 其他依赖安装限定 ptm-encoder 环境，不新建环境
+  external_side_effects:
+  - GitHub push 到 vacuoleC/PTM
+  - 远程长任务启动 (sensecore, 24h 上限)
+  filesystem:
+  - 'read: D:/coding/PTM/**'
+  - 'write: D:/coding/PTM/PTMv2/outputs/**'
+  - 'write: D:/coding/PTM/PTMv2/scr/**'
+  - 'write: D:/coding/PTM/PTMv2/tests/**'
+  - 'write: D:/coding/PTM/PTMv2/config/**'
+  - 'write: D:/coding/PTM/PTMv2/data/processed/**'
+  - 'write: D:/coding/PTM/PTMv2/remote/**'
+  - 'write: D:/coding/PTM/PTMv2/releases/**'
+  - 'read-only: ../PTMv1/**'
+  - 'write: /data/PTM/** (remote via SSH)'
+project_design_revision: 1
+project_id: PTMv2-supervised-refactor
+project_slug: ptmv2-supervised-refactor
+project_uid: 9f3d7c2e-1b5a-4e6d-8f2a-3c7b9d1e4a56
+root_goal: 完成小样本 PTM 可建模性审计：为 LSCC G2 vs G3（106 名患者，G2=58/G3=48）得出可复现的折外结论， 生成低容量基线（raw/PCA
+  Elastic Net 主模型）与完整管线置换检验，如实报告可建模性或不可稳定建模， 并给出未来数据路线图与 encoder 重新开门判定。
+schema_version: 0.1.0
+unresolved_non_blocking_items: []

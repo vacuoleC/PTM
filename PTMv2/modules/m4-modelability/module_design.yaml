@@ -1,0 +1,92 @@
+acceptance_criteria:
+- E3.1：冻结主管线 500 次完整置换 null 完成，经验 p 值生成。
+- E3.2：学习曲线与稳定性完成（50%/70%/100% × 10 重复）。
+- E3.3：失败/异常分支按发现追加。
+- 主证据规则：主模型仅当 OOF AUPRC 高于基线且置换 p<=0.05 时称为可预测。
+budget_scope:
+- time
+- compute
+deliverable_uids:
+- d1-9a3f2b5c-1d4e-4f6a-8b7c-2e5a9f1c3b7d
+- d2-4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e
+- d3-1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f
+- d4-2e3f4a5b-6c7d-8e9f-0a1b-2c3d4e5f6a7b
+dependencies:
+- m3-pipeline
+environment_ids:
+- ENV-LOCAL
+- ENV-REMOTE
+events:
+- acceptance_criteria:
+  - 500 次置换在远程 ptm-encoder 环境完成；每次置换重跑训练折内处理、内层选择及外层预测。
+  - 经验 p 值 = (1+count(null>=observed))/(1+500)。
+  - 观察值来自预注册候选网格（raw 27 组合）。
+  dependencies:
+  - E2
+  event_id: E3.1
+  first_wave_subtasks:
+  - acceptance_criteria:
+    - 单元测试通过
+    - 小规模烟雾测试通过
+    action: 本地实现并测试置换 null 运行器（scramble labels, 复用 nested_raw_elasticnet.nested_oof）
+    subtask_id: E3.1-S1
+  - acceptance_criteria:
+    - 包内文件齐全
+    - SHA256 记录
+    action: 构建远程运行包（含冻结设计、配置、预注册候选、50 折分配），推送 GitHub
+    subtask_id: E3.1-S2
+  - acceptance_criteria:
+    - 日志带时间戳 flush 进度
+    - 远程日志写入 /data/PTM/logs/
+    action: 远程启动 500 次置换长任务（sensecore, /data/PTM, 24h 上限），子代理监控进度
+    subtask_id: E3.1-S3
+  - acceptance_criteria:
+    - CSV 完整
+    - 无重复/截断
+    action: 子代理监督远程交付：校验 null CSV 完整性（复用 validate 模式），回传本地
+    subtask_id: E3.1-S4
+  - acceptance_criteria:
+    - p 值记录
+    - whatwedo.md 更新
+    - 原子提交推送
+    action: 本地核验并记录：经验 p 值、null 分布表、账本与原子提交
+    subtask_id: E3.1-S5
+  goal: 冻结主管线的完整置换 null
+  inputs:
+  - lscc_multi_ptm_residuals
+  - lscc_g2_g3_labels
+  outputs:
+  - primary_model_permutation_null.csv
+  - modelability_audit.md
+  split_rule: patient-level nested CV (5 outer folds x 10 repeats, 3 inner folds)
+- acceptance_criteria:
+  - 50%/70%/100% 训练分数 × 10 重复完成，每分数保留内层分层验证。
+  - 学习曲线平坦仅表示当前设计下未观察到增益，不断言标签噪声。
+  dependencies:
+  - E3.1
+  event_id: E3.2
+  first_wave_subtasks: []
+  goal: 学习曲线与稳定性
+  inputs:
+  - lscc_multi_ptm_residuals
+  - lscc_g2_g3_labels
+  outputs:
+  - primary_model_learning_curve.csv
+  split_rule: patient-level nested CV
+- acceptance_criteria:
+  - 按发现追加失败分支记录，保留证据，不抹去。
+  dependencies:
+  - E3.1
+  event_id: E3.3
+  first_wave_subtasks: []
+  goal: 失败/异常分支
+  inputs: []
+  outputs: []
+  split_rule: n/a
+goal: 可建模性审计（E3）— 进行中，从 E3.1 继续
+module_id: m4-modelability
+module_uid: 5c331010-a1ce-4e65-81df-a4a68261cac7
+permission_scope:
+- filesystem
+- commands
+- remote_compute_start

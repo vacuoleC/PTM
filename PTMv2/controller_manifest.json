@@ -1,0 +1,139 @@
+{
+  "adapters": [
+    {
+      "adapter_id": "claude-code",
+      "required": true,
+      "required_capabilities": [
+        "project_discovery",
+        "startup_context",
+        "stop_interception",
+        "auto_continue",
+        "pre_compact_checkpoint",
+        "post_compact_recovery"
+      ]
+    },
+    {
+      "adapter_id": "codex",
+      "required": false,
+      "required_capabilities": [
+        "project_discovery"
+      ]
+    }
+  ],
+  "controller_revision": 1,
+  "controller_skill": {
+    "name": "ptmv2-supervised-refactor-controller",
+    "path": "skills/ptmv2-supervised-refactor-controller/SKILL.md"
+  },
+  "generated_at": "2026-08-06T21:34:18.993064Z",
+  "managed_files": [
+    {
+      "category": "managed_control",
+      "ownership": "generator",
+      "path": "adapters/claude-code/settings.json",
+      "sha256": "a6a56de4c9d53cf4a7c00d7bee8ae855c587610d6f623d27f24aa7778435d3f2"
+    },
+    {
+      "category": "managed_control",
+      "ownership": "generator",
+      "path": "adapters/codex/hooks.json",
+      "sha256": "6c3032a03c4cdec79a35b7ad49dd3c828706ce94f51fc22f78700f35ca7b596e"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m1-governance/module_design.yaml",
+      "sha256": "03543435bdf34c7718c8f7835ec64fc63e7858088673b887db4bd71aea63d577"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m2-data-audit/module_design.yaml",
+      "sha256": "166b19bc003ba71c231f942e9a18fad8dde46f0d92560d9eb0dc8721e62002a4"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m3-pipeline/module_design.yaml",
+      "sha256": "c2af94265b735d3d29e147b2db68c2a0a12483d2de037c8bc5d3f53dd7084627"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m4-modelability/module_design.yaml",
+      "sha256": "7e9439c0dea6a407e562f9b5784338e87cd0b0433314e78c6e090b356bbbc416"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m5-comparison/module_design.yaml",
+      "sha256": "b375788993878aebff30b5532fe411d0e1ca78c2542decd6b95a78b92707cf38"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m6-roadmap/module_design.yaml",
+      "sha256": "c34d7904a8f91a386f1ed7f7572d9fca0d46d558431774e2dc7c2098850f1336"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m7-multiview/module_design.yaml",
+      "sha256": "ad49e10f9ff5b1a3dfa93bca95b5c406ae81cb36f1c1426f5d2ed39b1ed4e6ef"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "modules/m8-delivery/module_design.yaml",
+      "sha256": "a2577728a2d06cd1008604448a7cd8bc8d855d6485f347162d22f6be41852efc"
+    },
+    {
+      "category": "frozen_design",
+      "ownership": "generator",
+      "path": "project_design.yaml",
+      "sha256": "1e6e46c561f64e404d7ccb6d24d8f409523b9ff4143d99233412660510e827b7"
+    },
+    {
+      "category": "policy_snapshot",
+      "ownership": "generator",
+      "path": "schemas/state-transitions.schema.json",
+      "sha256": "5267d657772f53136c5ab278ed9a9d2723dc43a3ad1c6cb8faa841401ae5542f"
+    },
+    {
+      "category": "policy_snapshot",
+      "ownership": "generator",
+      "path": "schemas/state-transitions.yaml",
+      "sha256": "94270670475941c1e4acdda03341e451f1032f22ad9981c088e3a91966938965"
+    },
+    {
+      "category": "policy_snapshot",
+      "ownership": "generator",
+      "path": "schemas/work-item-lifecycle.schema.json",
+      "sha256": "067433ec97b50e5dfa47a291a7d2d2c3119374cb08b8eecf5dcfa51586196247"
+    },
+    {
+      "category": "policy_snapshot",
+      "ownership": "generator",
+      "path": "schemas/work-item-lifecycle.yaml",
+      "sha256": "f3cd0086086beaca07ee210104cd0340adb27f5a1d1f233c836f912179b713e2"
+    },
+    {
+      "category": "controller_skill",
+      "ownership": "generator",
+      "path": "skills/ptmv2-supervised-refactor-controller/SKILL.md",
+      "sha256": "794167b35cb459508f0bd30841b29647d961efd4d3db52bd1f063d14afeb4cf0"
+    }
+  ],
+  "project_design_revision": 1,
+  "project_slug": "ptmv2-supervised-refactor",
+  "project_uid": "9f3d7c2e-1b5a-4e6d-8f2a-3c7b9d1e4a56",
+  "schema_version": "0.1.0",
+  "versions": {
+    "adapter": "0.1.0",
+    "controller_spec": "0.1.0",
+    "generator": "0.1.0",
+    "guard_registry": "0.1.0",
+    "runtime": "0.1.0",
+    "schema": "0.1.0"
+  }
+}

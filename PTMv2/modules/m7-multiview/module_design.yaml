@@ -1,0 +1,27 @@
+acceptance_criteria:
+- 仅在真实患者级磷酸化/乙酰化配对存在且 M4 通过主证据规则时开启。
+- 不开启时以有证据的'不启动'记录完成。
+budget_scope:
+- compute
+deliverable_uids: []
+dependencies:
+- m4-modelability
+environment_ids:
+- ENV-LOCAL
+events:
+- acceptance_criteria:
+  - 条件 gate 显式评估
+  - 不开启时记录'不启动'
+  dependencies:
+  - E3.1
+  event_id: E6
+  first_wave_subtasks: []
+  goal: 条件性多视图分支（仅真实配对且 E3 通过时开启）
+  inputs: []
+  outputs: []
+  split_rule: n/a
+goal: 条件性多视图分支（E6）
+module_id: m7-multiview
+module_uid: 0f8d51f1-dff7-432c-941d-42770af07448
+permission_scope:
+- filesystem

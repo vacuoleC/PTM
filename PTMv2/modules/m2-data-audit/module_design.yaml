@@ -1,0 +1,27 @@
+acceptance_criteria:
+- 病人独立性、标签完整性与类别结构审计（E1.1）通过。
+- 测量缺失与候选特征审计（E1.2）完成并生成报告。
+budget_scope:
+- storage
+deliverable_uids:
+- d8-6c7d8e9f-0a1b-2c3d-4e5f-6a7b8c9d0e1f
+dependencies:
+- m1-governance
+environment_ids:
+- ENV-LOCAL
+events:
+- acceptance_criteria:
+  - 已完成
+  dependencies:
+  - E0
+  event_id: E1
+  first_wave_subtasks: []
+  goal: 数据与标签可行性审计完成
+  inputs: []
+  outputs: []
+  split_rule: n/a
+goal: 数据与标签可行性审计（E1）— 已完成保留
+module_id: m2-data-audit
+module_uid: 0e10768e-4676-478c-ac7d-b32d6fe5c197
+permission_scope:
+- filesystem

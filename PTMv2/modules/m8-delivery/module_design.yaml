@@ -1,0 +1,34 @@
+acceptance_criteria:
+- v2_execution_comparison.md、v2_task_comparison.csv、v2_event_tree.svg 全部生成。
+- 所有数值结论可复现；失败分支保留。
+budget_scope:
+- storage
+deliverable_uids:
+- d6-4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d
+- d7-5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e
+dependencies:
+- m4-modelability
+- m5-comparison
+- m6-roadmap
+environment_ids:
+- ENV-LOCAL
+events:
+- acceptance_criteria:
+  - 报告与事件树可视化生成
+  - '交付后 automation_state: complete'
+  dependencies:
+  - E5
+  event_id: E7
+  first_wave_subtasks: []
+  goal: 最终可复现交付
+  inputs: []
+  outputs:
+  - v2_execution_comparison.md
+  - v2_task_comparison.csv
+  - v2_event_tree.svg
+  split_rule: n/a
+goal: 最终可复现交付与执行对比报告（E7）
+module_id: m8-delivery
+module_uid: b563d619-c8d4-45ec-b109-38158d916223
+permission_scope:
+- filesystem

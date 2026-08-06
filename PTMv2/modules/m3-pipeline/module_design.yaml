@@ -1,0 +1,30 @@
+acceptance_criteria:
+- 训练折内预处理与单元测试（E2.1）通过。
+- 嵌套患者级拆分与折外预测记录（E2.2）完成；固定参数冒烟结果记录。
+budget_scope:
+- time
+- compute
+deliverable_uids:
+- d2-4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e
+dependencies:
+- m2-data-audit
+environment_ids:
+- ENV-LOCAL
+- ENV-REMOTE
+events:
+- acceptance_criteria:
+  - 已完成
+  dependencies:
+  - E1
+  event_id: E2
+  first_wave_subtasks: []
+  goal: 无泄漏低容量管线验证完成
+  inputs: []
+  outputs: []
+  split_rule: n/a
+goal: 无泄漏低容量管线（E2）— 已完成保留
+module_id: m3-pipeline
+module_uid: 93deb2e5-ceae-4952-a2b6-928e9c1af327
+permission_scope:
+- filesystem
+- commands

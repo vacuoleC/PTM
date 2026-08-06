@@ -1,0 +1,45 @@
+blockers: []
+budget_status:
+  checked_at: null
+  consumed: {}
+  enforcement: disabled
+  limits: {}
+  status: not_configured
+controller_revision: 1
+expected_controller_manifest_hash: 26a497dc6931be39adec2626cefa2bbe702965a99e356a5eabdd5919db965c55
+extensions: {}
+focus:
+  event_uid: null
+  module_uid: null
+  subtask_uid: null
+in_flight_work_items: []
+last_committed_lease_id: null
+last_transaction_id: 501f3257-86ee-4549-be3c-00d9ae3843a9
+last_transition:
+  from: draft
+  occurred_at: '2026-08-06T22:09:15.478805Z'
+  to: ready
+  transaction_id: 501f3257-86ee-4549-be3c-00d9ae3843a9
+  transition_id: TR-001
+  transition_reason_code: candidate_materialized
+last_writer_workspace_instance_id: 563922fd-33ab-4eb1-a28f-41e64b487bb1
+ledger_head:
+  lifecycle_epoch: 1
+  record_hash: 40ac19e6d76d0d1120dda4618a57fa2e0ade3c731573eac2a073b2119de41d38
+  record_id: 9998e5ca-64b2-419f-8cfa-70d5690b1ea9
+  sequence: 1
+lifecycle_epoch: 1
+monitor_revision: 0
+project_design_revision: 1
+project_uid: 9f3d7c2e-1b5a-4e6d-8f2a-3c7b9d1e4a56
+remote_jobs: []
+review_item_uids: []
+schema_version: 0.1.0
+state: ready
+state_context:
+  blocked_from: null
+  failed_from: null
+  recovery_target: null
+  resume_target: null
+state_reason_code: awaiting_activation
+updated_at: '2026-08-06T22:09:15.478805Z'

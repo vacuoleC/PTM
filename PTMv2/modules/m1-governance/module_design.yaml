@@ -1,0 +1,26 @@
+acceptance_criteria:
+- config/project.yaml、data/manifest.tsv、study_design.yaml、AGENTS.md、whatwedo.md 已冻结并提交。
+budget_scope:
+- storage
+- network
+deliverable_uids:
+- d8-6c7d8e9f-0a1b-2c3d-4e5f-6a7b8c9d0e1f
+dependencies: []
+environment_ids:
+- ENV-LOCAL
+events:
+- acceptance_criteria:
+  - 已完成
+  dependencies: []
+  event_id: E0
+  first_wave_subtasks: []
+  goal: v2 治理、数据溯源与研究设计冻结
+  inputs: []
+  outputs: []
+  split_rule: n/a
+goal: v2 治理、数据溯源与研究设计（E0）— 已完成保留
+module_id: m1-governance
+module_uid: 5d895033-042b-46f8-a6d0-915e72150bf0
+permission_scope:
+- filesystem
+- commands

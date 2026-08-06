@@ -1,0 +1,30 @@
+acceptance_criteria:
+- data_roadmap.md 记录失败边界、数据需求、真实配对条件与可能数据来源。
+- encoder 重新开门仅当计量兼容无标签预训练来源或学习曲线显示稳定增益。
+budget_scope:
+- storage
+deliverable_uids:
+- d5-3f4a5b6c-7d8e-9f0a-1b2c-3d4e5f6a7b8c
+dependencies:
+- m4-modelability
+- m5-comparison
+environment_ids:
+- ENV-LOCAL
+events:
+- acceptance_criteria:
+  - 失败边界诊断可靠
+  - 数据路线图明确继续/暂停/开启多视图依据
+  dependencies:
+  - E4.1
+  event_id: E5
+  first_wave_subtasks: []
+  goal: 失败边界与数据路线图
+  inputs: []
+  outputs:
+  - data_roadmap.md
+  split_rule: n/a
+goal: 失败边界、数据路线图与 encoder 重新开门判定（E5）
+module_id: m6-roadmap
+module_uid: 1066ba92-0dcb-43b9-9c42-cce6c189af13
+permission_scope:
+- filesystem
