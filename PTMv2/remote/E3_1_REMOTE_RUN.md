@@ -4,37 +4,38 @@
 在远程 `sensecore` 上执行冻结主管线（raw Elastic Net）的 500 次完整置换 null。每次置换重跑训练折内处理、内层参数选择与外层 OOF 预测，得出经验 p 值。
 
 ## 前置（已由本地完成）
-- `run_permutation_null.py` + 嵌套核心 + 单元测试（本地 4/4 通过）
-- 本地高维 BLAS 崩溃（`0xc06d007f`）已确认——**完整评估必须远程执行**
-- 运行包 `releases/e3_1_permutation_null_bundle.tar.gz`（SHA256 `c8ce64e3ab35c9424bd796d3e809fcdf999c721b6d5f0285225cd8c143784442`）
+- `run_permutation_null.py`（多核并行 + checkpoint + 限时）+ 单元测试 5/5 通过
+- 本地高维 BLAS 崩溃（`0xc06d007f`）——**完整评估必须远程执行**
+- 远程：192 核 / 2TB 内存（Intel Xeon 8468V），`/root/anaconda3/envs/ptm-encoder/bin/python`
 
-## 远程执行步骤
+## 远程执行（setsid 彻底脱离 SSH）
 
-1. 确认远程环境与项目目录：
+1. 同步最新代码：
    ```bash
-   ssh sensecore 'ls /data/PTM/PTMv2/scr/ | grep -E "run_permutation|nested"'
+   ssh sensecore 'cd /data/PTM/PTMv2 && git fetch origin main && git checkout origin/main -- scr/ config/ releases/'
    ```
-2. 将运行包解压到 `/data/PTM/PTMv2`（覆盖 scr/ 与配置，保留原始数据引用）：
+2. 启动 500 次置换（192 核并行，单进程 24h 上限内约 6-8 小时完成）：
    ```bash
-   ssh sensecore 'cd /data/PTM/PTMv2 && tar xzf releases/e3_1_permutation_null_bundle.tar.gz'
+   ssh sensecore 'cd /data/PTM/PTMv2 && setsid nohup /root/anaconda3/envs/ptm-encoder/bin/python -u scr/run_permutation_null.py --config config/project.yaml --n-permutations 500 --n-jobs 190 --checkpoint /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_checkpoint.csv --max-hours 24 > /data/PTM/logs/e3_1_permutation_null.log 2>&1 < /dev/null & echo $! > /data/PTM/logs/e3_1_permutation_null.pid; echo started'
    ```
-3. 启动 500 次置换长任务（nohup + 时间戳 flush 日志）：
+3. 监控进度（每 ~10 分钟）：
    ```bash
-   ssh sensecore 'cd /data/PTM/PTMv2 && nohup /root/anaconda3/envs/ptm-encoder/bin/python -u scr/run_permutation_null.py --config config/project.yaml --n-permutations 500 > /data/PTM/logs/e3_1_permutation_null.log 2>&1 & echo $! > /data/PTM/logs/e3_1_permutation_null.pid; echo started'
-   ```
-4. 监控进度（每 ~10 分钟）：
-   ```bash
-   tail -3 /data/PTM/logs/e3_1_permutation_null.log
-   # 期望输出: permutation N/500 done ... observed_auprc=... p_value=...
+   tail -2 /data/PTM/logs/e3_1_permutation_null.log
+   wc -l /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_checkpoint.csv   # 期望 501 行（表头+500）
    ```
 
 ## 输出
-- `/data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_smoke.csv`（500 次置换的 null AUPRC 表，文件名因脚本默认；完成后本地重命名为正式 `primary_model_permutation_null.csv`）
-- 完整日志 `/data/PTM/logs/e3_1_permutation_null.log`
+- checkpoint：`/data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_checkpoint.csv`（`permutation,auprc`，每置换一行）
+- 日志：`/data/PTM/logs/e3_1_permutation_null.log`
+- 完成后本地重命名 checkpoint 为正式 `outputs/tables/primary_model_permutation_null.csv`
 
 ## 核验命令（回传前）
 ```bash
-wc -l /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_smoke.csv
-head -2 /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_smoke.csv
-tail -2 /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_smoke.csv
+wc -l /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_checkpoint.csv
+head -2 /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_checkpoint.csv
+tail -2 /data/PTM/PTMv2/outputs/tables/e3_1_permutation_null_checkpoint.csv
+grep "p_value" /data/PTM/logs/e3_1_permutation_null.log
 ```
+
+## 接力恢复（若 24h 到达未完成）
+同一命令重跑即可：`--resume` 已由 checkpoint 自动处理（`--checkpoint` 文件存在时跳过已完成置换）。继续启动直到 501 行。
