@@ -19,7 +19,6 @@ from sklearn.metrics import average_precision_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scr"))
 from evaluate import fit_score_fold
-from evaluate_gpu import fit_score_fold_gpu
 from preprocessing import make_preprocessing_pipeline
 
 
@@ -40,11 +39,11 @@ def main(config_path: Path) -> None:
         X_te, y_te = X.loc[test_ids], labels.loc[test_ids]
 
         prep = make_preprocessing_pipeline(threshold)
-        X_tr_p = prep.fit_transform(X_tr)
-        X_te_p = prep.transform(X_te)
+        X_tr_p = prep.fit_transform(X_tr).astype(np.float32)
+        X_te_p = prep.transform(X_te).astype(np.float32)
 
         p_cpu = fit_score_fold(X_tr, y_tr, X_te, threshold, C, l1_ratio)
-        p_gpu = fit_score_fold_gpu(X_tr_p, y_tr.to_numpy(), X_te_p, threshold, C, l1_ratio)
+        p_gpu = fit_score_fold_cuml(X_tr_p, y_tr.to_numpy(), X_te_p, threshold, C, l1_ratio)
 
         auprc_cpu = average_precision_score(y_te, p_cpu)
         auprc_gpu = average_precision_score(y_te, p_gpu)

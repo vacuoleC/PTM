@@ -55,3 +55,29 @@ def fit_score_fold_gpu(
     with torch.no_grad():
         logits_te = (Xt @ w + b).squeeze().cpu().numpy()
     return 1.0 / (1.0 + np.exp(-logits_te))
+
+
+def fit_score_fold_cuml(
+    X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
+    threshold: float, C: float, l1_ratio: float,
+    *,
+    max_iter: int = 10000, tol: float = 1e-6, seed: int = 0,
+) -> np.ndarray:
+    """Fit elastic-net logistic regression via RAPIDS cuML GPU coordinate descent.
+
+    Mirrors evaluate.fit_score_fold (sklearn saga) using cuML's 'qn' solver,
+    which is the same coordinate-descent family and converges to the same
+    objective. Caller preprocesses with the training-fold-only pipeline.
+    Requires the LD_LIBRARY_PATH fix (libstdc++ from a newer conda env) for
+    cuML's C++ extensions on this host.
+    """
+    import cudf
+    from cuml.linear_model import LogisticRegression as CumlLR
+
+    Xg = cudf.DataFrame(np.ascontiguousarray(X_train, dtype=np.float32))
+    yg = cudf.Series(np.ascontiguousarray(y_train, dtype=np.float32))
+    Xte = cudf.DataFrame(np.ascontiguousarray(X_test, dtype=np.float32))
+    model = CumlLR(penalty="elasticnet", C=C, l1_ratio=l1_ratio, solver="qn", max_iter=max_iter, tol=tol)
+    model.fit(Xg, yg)
+    proba = model.predict_proba(Xte).to_numpy()[:, 1]
+    return proba
