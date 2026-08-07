@@ -295,3 +295,14 @@ E7  最终可复现交付与执行对比报告
   - 第 4 次 cuML qn 中等 tol（1e-8/1e-7/1e-6）：fold3 卡死超时 FAIL
 - 结果怎么样：cuML qn 在 fold 3 上收敛卡死；torch L-BFGS 排序相关性不足；saga 本身稳定。核心难点：GPU 优化器难以精确复现 saga 的 AUPRC（22 测试样本上对概率微小变化敏感）。
 - 证据与决策：attempt3.log/attempt4.log（远程）；下一步第 5 次尝试后若失败退回 CPU（60 核 saga + 特征裁剪降维）。
+
+### E3.1 — GPU 一致性尝试第 5 次（PCA 降维）+ 退回 CPU
+
+- 父事件：E3；状态：进行中（退回 CPU saga）
+- 尝试记录（第 5 次）：PCA 降维后 saga vs cuML 在 fold 3：
+  - PCA30：diff 0.0074 ✅ 但 spearman 0.9494 ⚠️（差 0.0006）
+  - PCA50：spearman 0.9558 ✅ 但 diff 0.0116 ⚠️
+  - PCA85：diff 0.0556 ❌
+  - 结论：方向正确（降维提高一致性）但 5 次尝试内未全过阈值。
+- 决策（按用户预授权）：5 次 GPU 尝试未全过 → 退回 CPU saga 任务。PCA30 的临界结果记录在案，供用户醒后决定是否调整验收标准或继续探索。
+- 证据：远程 attempt5.log、consistency CSV。
