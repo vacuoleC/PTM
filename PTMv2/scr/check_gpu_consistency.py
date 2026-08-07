@@ -19,6 +19,7 @@ from sklearn.metrics import average_precision_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scr"))
 from evaluate import fit_score_fold
+from evaluate_gpu import fit_score_fold_cuml
 from preprocessing import make_preprocessing_pipeline
 
 
