@@ -358,3 +358,12 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：远程同步最新代码（含并行修复）；启动 500 置换作业（pid 3948481，--n-jobs 60，--checkpoint e3_1_permutation_null_checkpoint.csv，--max-hours 24）。
 - 结果怎么样：作业运行中（观察值嵌套约 4h 后进入 60 并行置换）；预计多批 24h 接力（单置换约 9.6h，60 并行 500 次约 80h）；监控子代理已启动。
 - 证据与决策：本记录；PCA30 方案仍待用户批准（未执行）。
+
+### E3.1 — PCA 全量置换启动（pca_elastic_net 主模型）
+
+- 时间：2026-08-08 09:00 左右（东八区）
+- 为什么做：原样 CPU 500 置换（6 万特征 saga）嵌套 85-95h、总 18-20 天不可行；发现冻结设计内已有 pca_elastic_net 主模型（pipeline 含 pca，components [10,20,40]），单次拟合 1.45s（PCA 降维后低维 saga），500 置换 60 并行约 14h，24h 内完成。
+- 怎么做：新增 `nested_pca_elasticnet.py`（PCA 嵌套核心）+ `evaluate.fit_score_fold_pca` + `run_permutation_null_pca.py`（并行/checkpoint/限时）；测试 2/2 通过；启动全量 500 置换（pid 4087256，--n-jobs 60，checkpoint e3_1_permutation_null_pca_checkpoint.csv，--max-hours 24）。
+- 结果怎么样：作业运行中（观察值嵌套约 1.7h → 60 并行置换约 14h → 总计约 16h）；监控子代理已切换盯新作业。
+- 关键澄清：pca_elastic_net 是冻结设计内已有主模型（非 PCA30 变更请求），用其做置换在冻结设计内，无需变更批准。
+- 证据：提交 1fabf1f（PCA 嵌套核心+运行器）；pca_speed.log（1.45s/拟合实测）。
