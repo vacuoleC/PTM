@@ -1,0 +1,98 @@
+# E3.1 固定超参置换探索 — 思考模式
+
+## 任务复述
+
+- E3.1（冻结）：raw Elastic Net 主模型 500 次置换 null，每次重跑**完整嵌套**（检测过滤 → 中位数插补 →
+  标准化 → 内层 27 候选 × 3 内折选择 → 外层 OOF），统计量 = pooled OOF AUPRC（1060 患者），
+  p = (1 + count(null ≥ observed)) / (1 + 500)，scope 冻结为 `complete_primary_pipeline_including_inner_selection`。
+- 困难：GPU cuml-qn 下全嵌套 50 折 ≈ 32s/折（81 内层拟合 + 外层），500 置换 × 50 折 × 82 拟合 × 0.4s
+  ≈ 222h 串行，24h 作业上限内不可行。
+- 探索目标：**固定超参置换**（置换时不重跑内层选择，固定用观察值阶段选出的最优超参）是否统计有效、
+  能否在 24h 内完成、与全嵌套的差异量化。
+- 已采纳技术（exp/e4-raw/）：cuml-qn GPU 求解器 + sort-trick 中位数（f32）+ array-cache；
+  E4.1 观察值 = e4raw_full_oof_scores.csv（pooled AP 0.464586），每折最优超参 = e4raw_full_selected_params.csv
+  （50 行，20 种不同 (thr, C, l1r) 组合）。
+
+## 资源现状（2026-08-08 23:00 核查）
+
+- E3.1/E3.2 进程**均已停止**（0 个 python 进程）；E3.1 pca 置换 checkpoint 只有表头（0/500 完成，
+  60 workers 启动后未产出即停）；E3.2 学习曲线日志停止在警告刷屏。
+- GPU H100 80GB **完全空闲**（0 MiB / 0%），机器 load 11，内存可用 1758GB。
+- → 当前是固定超参置换探索的干净窗口：GPU 独占，无主作业干扰。
+
+## 统计有效性分析（固定超参 null 是否有效）
+
+### 置换检验的有效性要求
+
+p 值 = P(null ≥ observed)，要求 **H0（特征与标签无关）下 null 统计量的分布 = 观察值统计量的分布**。
+
+### 关键观察 1：预处理是标签无关的
+
+检测过滤（列缺失率）、中位数插补、标准化只依赖 X，不依赖 y。因此任意置换下预处理输出与观察值
+阶段**逐位相同**——冻结管线的"每次置换重跑预处理"在语义上是冗余的（数值上无差异）。这使
+预处理可缓存（探索执行层面的合法优化，非统计捷径）。
+
+### 关键观察 2：H0 下固定超参 null 与全嵌套 null 分布相同的论证
+
+记 S_full(L) = 对标签赋值 L 跑完整嵌套（内层选择 + 外层 OOF）的 pooled AP；
+S_fix(L; π) = 用固定参数 π 对 L 跑外层 OOF 的 pooled AP。
+
+- 全嵌套置换 i：π_i = selection(内折标签_i)，评估在外折_i。H0 下给定 X，内折标签 ⊥ 外折标签
+  （标签赋值可交换）→ π_i ⊥ 外折评估噪声 → S_full(L_i) 的分布 = "π ~ 选择分布（独立）、
+  评估噪声 ~ 基线 + 独立噪声"。
+- 固定超参置换 i：π_obs = selection(观察值标签)。H0 下观察值标签与置换标签可交换、条件独立于 X
+  → π_obs ⊥ 外折评估噪声 → S_fix(L_i; π_obs) 的分布同样是"π ~ 选择分布（独立）、评估噪声 ~ 基线 + 独立噪声"。
+- 两者在 H0 下**边际分布相同**（选择分布相同、评估噪声分布相同、且都独立于评估）。
+- 结论：**理论上固定超参 null 与全嵌套 null 在 H0 下分布相同**，p 值无系统偏差（不乐观也不必然保守），
+  二级矩（方差）可能因"π 固定跨置换 vs 逐置换变化"而有二阶差异，需实证量化。
+
+### 关键观察 3：备择假设下（真实信号存在）的行为
+
+固定超参用的是信号调优的参数（观察值阶段选出）。置换标签后评估：逻辑回归拟合置换标签（噪声），
+外层评估是留出折 → 训练噪声不迁移 → null 仍落在基线附近。**检验功效不被破坏**：T_obs（信号上
+评估）仍远高于 null。父任务提示的"保守偏大"是可能的（若信号调优参数在置换数据上有二阶抬升），
+但论证显示一阶无差异——这正是需要实证量化的问题。
+
+### 与冻结 scope 的偏差
+
+冻结 scope 为 `complete_primary_pipeline_including_inner_selection`。固定超参置换省略内层选择重跑，
+是**执行层偏差**（统计量定义、置换方案、p 值公式不变），偏差方向理论上为零、实证上待量化。
+
+## 置换方案定义（沿用冻结方案）
+
+- 置换：`rng = np.random.default_rng(0 + perm_index)`，`rng.permutation(labels)`（与
+  scr/run_permutation_null.py 逐位一致——保证与全嵌套比较时"同一置换"）。
+- 统计量：50 折 pooled OOF AP（1060 行），与冻结一致。
+- 固定参数：**每折用观察值阶段（e4raw_full_selected_params.csv）该折选出的 (thr, C, l1r)**——
+  折级一致性（父任务方向 4 定义）。
+- p 值：p = (1 + count(null ≥ observed)) / (1 + N)，N 为置换次数。
+- 求解器：cuml-qn（与 E4.1 观察值同求解器，保证 p 值自洽——e4-raw lossing.md 的采纳标注要求）。
+
+## 候选方向（按优先级）
+
+### 方向 1：固定超参置换实测（统计有效性 + 计算量）
+- 50 次固定超参置换 × 50 折（单拟合/折，无内层循环），checkpoint CSV。
+- 产出：(a) null 分布形状；(b) 50 次实测耗时 → 500 次外推；(c) 与观察值 0.4646 的 p 值。
+- 预期耗时：预处理缓存后 50×50×~1.2s ≈ 50 分钟（GPU，0 核占用）。
+
+### 方向 2：与全嵌套差异量化（配对比较）
+- 同一组置换（相同 perm_index）上跑两种方案：固定超参 vs 全嵌套（81 内层拟合/折）。
+- 共享折子集（如 folds 0-9）以控预算：30 置换 × 10 折 × 全嵌套 32s/折 ≈ 2.7h。
+- 产出：两 null 分布配对比较（Wilcoxon 符号秩、均值差、形状 KS）、两 p 值差异。
+
+### 方向 3（若需要）：超参固定方式的敏感性
+- 折级最优 vs 全局最优（50 折 pooled 最优单一参数）——仅当前两者差异显著时才需要。
+
+## 执行环境
+
+- 远程：ssh sensecore；python /root/anaconda3/envs/ptm-encoder/bin/python；
+  LD_LIBRARY_PATH=/root/anaconda3/envs/bg-toy/lib（cuml import 需要）。
+- 数据：/data/PTM/PTMv1/outputs/lscc_multi_ptm_resid.pkl.gz（212×91692，取 106 有标签患者）；
+  assignments：/data/PTM/PTMv2/outputs/tables/e2_2_outer_split_assignments.csv（50 折）。
+- 工作目录：/data/PTM/PTMv2/exp/e3-fixed-param/（远程执行），本地 git 跟踪同一路径。
+- 参考：/tmp/e4raw_run_full.py（e4-raw 全量运行器，prep_stats/prep_apply 复用）。
+
+## 下一步
+
+执行模式：探针 P1（fold 0 固定超参复现 0.5450 + 置换标签 sanity + 单拟合耗时）→
+方向 1（50 置换全折）→ 方向 2（30 置换 × 10 折配对比较）→ 边界决策 → 回报。
