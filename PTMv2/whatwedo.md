@@ -418,3 +418,13 @@ E7  最终可复现交付与执行对比报告
 - 标记：exp/e4-raw/ 建立，进入探索模式。
 - 下一步：思考模式（rethinking.md）→ 执行模式（trydoing.jsonl）→ 边界决策（lossing.md）→ 退出（主会话审核）。
 - 证据：raw_3repeats.log（远程）、SA-3 探针报告。
+
+### E4.1 — raw 探索执行模式完成（GPU 方案跑通 + 边界决策通过）
+
+- 时间：2026-08-08 21:10 左右（东八区）
+- 父事件：E4.1 raw 探索模式触发（exp/e4-raw/ 已标记）
+- 为什么做：冻结内 sklearn-saga 方案在 E3.1/E3.2 占核下不可行（30+ 分钟未完成一次拟合）；探索 GPU + 预处理优化路径。
+- 怎么做：方向 A（cuml-qn GPU 求解器，0.4-1.6s/拟合）+ 方向 C（sort-trick 中位数替代 nanmedian，f32 全管线 2.3s vs 33.9s，数值一致 maxdiff 2.86e-06）+ array-cache（9 组 Xt/Xv 缓存，81 次纯拟合）；50 折全量预演（串行，checkpoint CSV）。
+- 结果怎么样：50/50 折 1530s（25.5 分钟）完成；pooled oof_ap=0.4646，10 重复 mean=0.4793（基线 0.4528）；边界决策通过（与 E4.1 真实意图不相悖，位点级可解释性保留）。
+- 边界决策要点：求解器差异（cuml-qn vs saga corr=0.98）为优化算法噪声；E4.1 置换 null 须用同求解器保证 p 值自洽；采纳需主会话审核（探索政策步骤 6）。
+- 证据：exp/e4-raw/{rethinking.md, trydoing.jsonl, lossing.md, outputs/}；提交 3204caf（含全量 OOF 产物）。
