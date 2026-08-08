@@ -35,12 +35,12 @@ def _prep_sklearn(X_train, X_test, threshold=0.1):
 
 
 def _svm_svd(Xtr, ytr, Xte, n_comp=20, C=0.1):
-    """TruncatedSVD → LinearSVM (cuml) + sigmoid calibration via AUPRC-friendly."""
+    """TruncatedSVD (sklearn, CPU, sparse-friendly) → LinearSVM (cuml) + calibration."""
+    from sklearn.decomposition import TruncatedSVD
     from cuml.svm import LinearSVC
-    from cuml.decomposition import TruncatedSVD
     from cuml.linear_model import LogisticRegression  # calibration proxy
 
-    svd = TruncatedSVD(n_components=n_comp)
+    svd = TruncatedSVD(n_components=n_comp, random_state=0)
     Xtr_l = svd.fit_transform(Xtr).astype(np.float32)
     Xte_l = svd.transform(Xte).astype(np.float32)
     # Calibrated SVM: fit SVM, then map decision values via logistic (calibration_cv=3 proxy)
