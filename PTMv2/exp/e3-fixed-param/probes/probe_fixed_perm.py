@@ -117,11 +117,11 @@ def run_fixed_fold(X_np, y_perm, fold_meta, fold, fixed_params, array_cache):
 
 
 def run_nested_fold(X_np, y_perm, fold_meta, fold, array_cache, inner_arrays, perm_index):
-    """Full nested fold (frozen semantics). Returns (score array, seconds)."""
+    """Full nested fold (frozen semantics). Returns (score array, seconds, selected)."""
     tr_idx, te_idx = fold_meta[fold]
     ytr = y_perm[tr_idx]
     # inner selection: 27 candidates x 3 inner folds; inner cv seeded 0+perm_index+fold
-    splits = inner_arrays[fold] if inner_arrays is not None else None
+    splits = inner_arrays.get(fold) if inner_arrays is not None else None
     if splits is None:
         cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=0 + perm_index + int(fold))
         splits = list(cv.split(X_np[tr_idx], ytr))
@@ -151,11 +151,12 @@ def run_nested_fold(X_np, y_perm, fold_meta, fold, array_cache, inner_arrays, pe
     Xv = prep_apply(X_np[te_idx], st)
     t0 = time.monotonic()
     p = fit_predict(Xt, ytr, Xv, C, l1r)
-    return p, time.monotonic() - t0
+    return p, time.monotonic() - t0, {"fold": fold, "threshold": thr, "C": C,
+                                       "l1_ratio": l1r, "inner_ap": best[1]}
 
 
 def pooled_ap_from_scores(all_p, all_y):
-    return float(average_precision_score(all_y, all_p))
+    return float(average_precision_score(np.concatenate(all_y), np.concatenate(all_p)))
 
 
 def main():
@@ -166,6 +167,11 @@ def main():
     ap.add_argument("--folds", type=str, default="0-49", help="e.g. 0-49 or 0-9")
     ap.add_argument("--checkpoint", type=str, default=None)
     ap.add_argument("--detail", type=str, default=None)
+    ap.add_argument("--sel-log", type=str, default=None,
+                    help="append selected params per fold (nested mode)")
+    ap.add_argument("--nested", action="store_true",
+                    help="observed mode: also run full nested path (perm_index=0 "
+                         "=> e4raw semantics) for validation")
     args = ap.parse_args()
 
     if "-" in args.folds:
@@ -198,11 +204,40 @@ def main():
         print(f"pooled AP over {len(folds)} folds = {pooled_ap_from_scores(all_p, all_y):.6f}", flush=True)
         # compare against e4raw observed per-fold APs
         obs = pd.read_csv(OBS_OOF_PATH)
+        obs_ap_fixed = float(average_precision_score(obs[obs.fold.isin(folds)].target,
+                                                     obs[obs.fold.isin(folds)].score))
         for fold in folds:
             sub = obs[obs.fold == fold]
             ref = average_precision_score(sub.target, sub.score)
             got = recs[[r["fold"] for r in recs].index(fold)]["ap"]
             print(f"fold {fold}: rerun={got:.6f} e4raw={ref:.6f} diff={got - ref:+.2e}", flush=True)
+        if args.nested:
+            print("== nested path validation (perm_index=0, e4raw semantics) ==", flush=True)
+            cache2 = {}
+            inner_arrays = {}
+            sel_recs = []
+            n_all_p, n_all_y = [], []
+            for fold in folds:
+                p, dt, sel = run_nested_fold(X_np, y_np, fold_meta, fold, cache2, inner_arrays, 0)
+                te_idx = fold_meta[fold][1]
+                n_all_p.append(p); n_all_y.append(y_np[te_idx])
+                sel_recs.append(sel)
+                print(f"fold {fold}: nested_ap={average_precision_score(y_np[te_idx], p):.6f} "
+                      f"sel=({sel['threshold']},{sel['C']},{sel['l1_ratio']}) inner_ap={sel['inner_ap']:.4f} "
+                      f"took={dt:.1f}s", flush=True)
+            nsel = pd.DataFrame(sel_recs).set_index("fold")
+            ref_sel = pd.read_csv(SEL_PATH).set_index("fold")
+            nsel = nsel.join(ref_sel, lsuffix="_rerun", rsuffix="_e4raw")
+            nsel["thr_match"] = nsel["threshold_rerun"] == nsel["threshold_e4raw"]
+            nsel["C_match"] = nsel["C_rerun"] == nsel["C_e4raw"]
+            nsel["lr_match"] = nsel["l1_ratio_rerun"] == nsel["l1_ratio_e4raw"]
+            nsel["sel_match"] = nsel["thr_match"] & nsel["C_match"] & nsel["lr_match"]
+            print(nsel[["threshold_rerun", "C_rerun", "l1_ratio_rerun",
+                        "threshold_e4raw", "C_e4raw", "l1_ratio_e4raw", "sel_match"]].to_string(),
+                  flush=True)
+            print(f"selection match: {int(nsel.sel_match.sum())}/{len(nsel)} folds; "
+                  f"nested pooled AP = {pooled_ap_from_scores(n_all_p, n_all_y):.6f} "
+                  f"(e4raw {obs_ap_fixed:.6f})", flush=True)
         return
 
     # permutation modes
@@ -237,7 +272,13 @@ def main():
             if args.mode == "fixed":
                 p, dt = run_fixed_fold(X_np, y_perm, fold_meta, fold, fixed_params, cache)
             else:
-                p, dt = run_nested_fold(X_np, y_perm, fold_meta, fold, cache, inner_arrays, perm_index)
+                p, dt, sel = run_nested_fold(X_np, y_perm, fold_meta, fold, cache, inner_arrays, perm_index)
+                if args.sel_log:
+                    with open(args.sel_log, "a") as fh:
+                        if not os.path.exists(args.sel_log) or os.path.getsize(args.sel_log) == 0:
+                            fh.write("permutation,fold,threshold,C,l1_ratio,inner_ap\n")
+                        fh.write(f"{perm_index},{sel['fold']},{sel['threshold']},{sel['C']},"
+                                 f"{sel['l1_ratio']},{sel['inner_ap']:.6f}\n")
             te_idx = fold_meta[fold][1]
             all_p.append(p); all_y.append(y_perm[te_idx])
             if args.detail:
