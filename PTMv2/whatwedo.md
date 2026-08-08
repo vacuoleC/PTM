@@ -456,3 +456,11 @@ E7  最终可复现交付与执行对比报告
 - 探索关闭：exp/e3-fixed-param/ 保留为证据；lossing.md 由主对话补写（子代理实证完成、文档缺失）。
 - 标注：产物 solver=cuml-qn + fixed-params。
 - 证据：fixed500_full_perm_null.csv（501 行）、rethinking/trydoing/lossing.md。
+
+### E3.1 — 正式产物落位与 E3.1 完成（S5）
+
+- 时间：2026-08-09 00:40 左右（东八区）
+- 正式产物：`outputs/tables/primary_model_permutation_null.csv`（501 行，fixed500 副本，md5 02e6c1e5）
+- 标注：solver=cuml-qn + fixed-params (observation-selected) + no inner-selection rerun
+- E3.1 状态：**已完成**（500 次置换 null + p=0.341 主证据结论：不可稳定建模）
+- 证据：本记录 + 正式 CSV。
