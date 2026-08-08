@@ -42,22 +42,12 @@ def _fit_cuml(Xt, yt, Xv, C, l1r):
 
 
 def _prep_pca(X_train, X_test, n_comp=20, seed=0):
-    """Median-impute (sort-trick) → standardize → PCA(n_comp) fit on train."""
-    def _impute_scale(a):
-        s = np.sort(a, axis=0)
-        nn = np.sum(~np.isnan(a), axis=0)
-        med = (s[nn // 2, np.arange(a.shape[1])] + s[(nn - 1) // 2, np.arange(a.shape[1])]) / 2.0
-        imp = np.where(np.isnan(a), med, a)
-        mu = imp.mean(axis=0)
-        sd = imp.std(axis=0) + 1e-8
-        return (imp - mu) / sd
+    """sklearn pipeline (handles NaN correctly) → PCA(n_comp) fit on train."""
+    from preprocessing import make_preprocessing_pipeline
 
-    a_tr = X_train.to_numpy(dtype=np.float32)
-    a_te = X_test.to_numpy(dtype=np.float32)
-    # Detection filter on train (keep frac >= 0.1), apply same mask to test
-    keep = np.mean(~np.isnan(a_tr), axis=0) >= 0.1
-    a_tr = _impute_scale(a_tr[:, keep])
-    a_te = _impute_scale(a_te[:, keep])
+    prep = make_preprocessing_pipeline(0.1)
+    a_tr = prep.fit_transform(X_train).astype(np.float32)
+    a_te = prep.transform(X_test).astype(np.float32)
     pca = PCA(n_components=min(n_comp, a_tr.shape[0] - 1, a_tr.shape[1]), random_state=seed)
     return pca.fit_transform(a_tr).astype(np.float32), pca.transform(a_te).astype(np.float32)
 
