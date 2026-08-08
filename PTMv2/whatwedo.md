@@ -445,3 +445,14 @@ E7  最终可复现交付与执行对比报告
 - 标记：exp/e3-fixed-param/ 建立，进入探索模式。
 - 探索目标：验证固定超参置换的统计有效性（null 分布有效性、p 值自洽）、与全嵌套的差异量化。
 - 证据：本记录。
+
+### E3.1 — 固定超参置换探索完成 + 主证据结论
+
+- 时间：2026-08-09 00:30 左右（东八区）
+- 探索（exp/e3-fixed-param/）：固定超参置换（观察值阶段每折最优超参，不重跑内层选择）+ cuml-qn GPU + sort-trick。500 次全量 25 分钟（3s/置换）。
+- 统计有效性：理论（H0 下固定与全嵌套 null 同分布）+ 实证（配对 Wilcoxon p=0.46、KS p=0.999、corr 0.858、p 值 0.484 vs 0.419 一致）。
+- **主证据结论**：null mean=0.4486（≈基线 0.4528）、observed=0.4646、**p=0.341（170/500）**。
+- **判定：p > 0.05 → 主模型（pca_elastic_net/raw 固定超参）未通过置换检验 → LSCC G2 vs G3 在当前数据上不可稳定建模**（验收标准第 2 条：如实得出否定结论）。
+- 探索关闭：exp/e3-fixed-param/ 保留为证据；lossing.md 由主对话补写（子代理实证完成、文档缺失）。
+- 标注：产物 solver=cuml-qn + fixed-params。
+- 证据：fixed500_full_perm_null.csv（501 行）、rethinking/trydoing/lossing.md。
