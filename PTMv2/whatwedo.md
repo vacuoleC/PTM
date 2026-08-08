@@ -464,3 +464,11 @@ E7  最终可复现交付与执行对比报告
 - 标注：solver=cuml-qn + fixed-params (observation-selected) + no inner-selection rerun
 - E3.1 状态：**已完成**（500 次置换 null + p=0.341 主证据结论：不可稳定建模）
 - 证据：本记录 + 正式 CSV。
+
+### E3.2 — 学习曲线中间结果（GPU）
+
+- 时间：2026-08-09 01:00 左右（东八区）
+- 首个 cell（frac=0.5 rep=0）：**auprc=0.4766**（> 基线 0.4528）——50% 样本下已有信号，初步支持"数据量不足"假设。
+- 速率：31 分钟/cell（cuml qn CPU-bound，GPU 仅 12% 利用率）→ 30 cells 预计 15-23h。
+- 决策：当前作业继续（24h 内可完成，30 cells 完整数据更可靠）；pca 主模型备选（快 100 倍，冻结设计内）。
+- 证据：e3_2_learning_curve_gpu.log。
