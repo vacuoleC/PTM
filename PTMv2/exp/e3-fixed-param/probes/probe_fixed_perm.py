@@ -121,11 +121,13 @@ def run_nested_fold(X_np, y_perm, fold_meta, fold, array_cache, inner_arrays, pe
     tr_idx, te_idx = fold_meta[fold]
     ytr = y_perm[tr_idx]
     # inner selection: 27 candidates x 3 inner folds; inner cv seeded 0+perm_index+fold
-    splits = inner_arrays.get(fold) if inner_arrays is not None else None
+    # (cache keyed by (perm_index, fold) — the splits depend on both!)
+    splits = inner_arrays.get((perm_index, fold)) if inner_arrays is not None else None
     if splits is None:
         cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=0 + perm_index + int(fold))
         splits = list(cv.split(X_np[tr_idx], ytr))
-        inner_arrays[fold] = splits
+        if inner_arrays is not None:
+            inner_arrays[(perm_index, fold)] = splits
     results = []
     for thr in THRESHOLDS:
         for C in CS:
