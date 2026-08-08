@@ -63,7 +63,7 @@ def main(config_path: Path) -> None:
     labels = pd.read_csv(root / config["paths"]["source_labels"]).set_index("patient_id")["target"]
     assignments = pd.read_csv(root / config["e2_2_smoke"]["outer_assignments"])
     # Observation-selected params per fold (E3.1 fixed-param adoption)
-    sel = pd.read_csv(root / "exp/e3-fixed-param/outputs/e4raw_full_selected_params.csv")
+    sel = pd.read_csv(root / "exp/e4-raw/outputs/e4raw_full_selected_params.csv")
     sel_by_fold = {(r.fold, r.threshold, r.C, r.l1_ratio) for r in sel.itertuples()}
 
     fractions = study["evaluation"]["learning_curve"]["training_fractions"]
