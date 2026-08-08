@@ -1,6 +1,7 @@
 study:
   name: "PTMv2 小样本 PTM 可建模性审计"
-  version: "2.0"
+  version: "2.1"
+  solver_change: "sklearn-saga -> cuml-qn (GPU), adopted via exp/e4-raw exploration 2026-08-08"
   status: "frozen"
   frozen_on: "2026-07-30"
   rationale: >-
@@ -54,7 +55,7 @@ models:
       classifier:
         name: "LogisticRegression"
         penalty: "elasticnet"
-        solver: "saga"
+        solver: "cuml-qn"
         max_iter: 10000
         C: [0.01, 0.1, 1.0]
         l1_ratio: [0.1, 0.5, 0.9]
@@ -64,7 +65,7 @@ models:
       classifier:
         name: "LogisticRegression"
         penalty: "elasticnet"
-        solver: "saga"
+        solver: "cuml-qn"
         max_iter: 10000
         C: [0.01, 0.1, 1.0]
         l1_ratio: [0.1, 0.5, 0.9]
@@ -79,7 +80,7 @@ models:
       classifier:
         name: "LogisticRegression"
         penalty: "elasticnet"
-        solver: "saga"
+        solver: "cuml-qn"
         max_iter: 10000
         C: [0.01, 0.1, 1.0]
         l1_ratio: [0.1, 0.5, 0.9]

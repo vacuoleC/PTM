@@ -428,3 +428,12 @@ E7  最终可复现交付与执行对比报告
 - 结果怎么样：50/50 折 1530s（25.5 分钟）完成；pooled oof_ap=0.4646，10 重复 mean=0.4793（基线 0.4528）；边界决策通过（与 E4.1 真实意图不相悖，位点级可解释性保留）。
 - 边界决策要点：求解器差异（cuml-qn vs saga corr=0.98）为优化算法噪声；E4.1 置换 null 须用同求解器保证 p 值自洽；采纳需主会话审核（探索政策步骤 6）。
 - 证据：exp/e4-raw/{rethinking.md, trydoing.jsonl, lossing.md, outputs/}；提交 3204caf（含全量 OOF 产物）。
+
+### E0.7 — GPU 求解器变更采纳（探索 exp/e4-raw 采纳）
+
+- 时间：2026-08-08 21:30 左右（东八区）
+- 决策：主对话审核探索（exp/e4-raw/ 六步完成）→ 用户批准 GPU 求解器变更。
+- 变更：sklearn-saga → cuml-qn（GPU 坐标下降，同一弹性网目标）；sort-trick 中位数 f32 预处理（数值等价 3e-6）。
+- 范围：执行层变更，不改变管线/候选网格/嵌套结构/统计规则；物化设计哈希不变（frozen-design 无 solver 字段）。
+- 标注：E4.1 产物表标注 solver=cuml-qn；raw 置换用同求解器保证 p 值自洽。
+- 证据：exp/e4-raw/{rethinking, trydoing, lossing}.md；study_design.yaml v2.1。
