@@ -32,13 +32,20 @@ def _init_worker(X, y, assignments, candidates, inner_splits, random_seed):
 
 
 def _run_one(perm_index: int) -> float:
-    X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
-    permuted = y.copy()
-    rng = np.random.default_rng(random_seed + perm_index)
-    permuted.iloc[:] = rng.permutation(permuted.to_numpy())
-    permuted.index = y.index
-    oof, _ = nested_oof(X, permuted, assignments, candidates, inner_splits, random_seed + perm_index)
-    return float(average_precision_score(oof.target, oof.score))
+    # multiprocessing fork inherits the parent's initialized OpenBLAS thread
+    # pool (128 threads per worker), causing oversubscription. Pin each worker
+    # to one BLAS thread at runtime — threadpoolctl takes effect after fork,
+    # unlike the pre-fork OPENBLAS_NUM_THREADS env var.
+    from threadpoolctl import threadpool_limits
+
+    with threadpool_limits(limits=1, user_api="blas"):
+        X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
+        permuted = y.copy()
+        rng = np.random.default_rng(random_seed + perm_index)
+        permuted.iloc[:] = rng.permutation(permuted.to_numpy())
+        permuted.index = y.index
+        oof, _ = nested_oof(X, permuted, assignments, candidates, inner_splits, random_seed + perm_index)
+        return float(average_precision_score(oof.target, oof.score))
 
 
 def _load_checkpoint(path: Path | None) -> set[int]:
