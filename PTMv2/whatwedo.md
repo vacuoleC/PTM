@@ -375,3 +375,12 @@ E7  最终可复现交付与执行对比报告
 - 怎么做：新增 `run_learning_curve.py`（3 fractions × 10 repeats × 50 折，患者级分层子采样 + 嵌套 CV，复用 pca_elastic_net 核心）+ 测试 2/2 通过；启动作业（pid 4152391，--n-jobs 30）。
 - 结果怎么样：E3.1（pid 4087256，嵌套阶段）与 E3.2（pid 4152391）并行运行中。
 - 证据：提交 58f7689（学习曲线+测试）。
+
+### E3.1 — OpenBLAS 线程超订修复
+
+- 时间：2026-08-08 16:15 左右（东八区）
+- 为什么做：E3.1 置换阶段 70 分钟 0 完成，实测 63 进程 11533 线程（每 worker 128 线程）在 192 核上超订竞争，等效 3-6 核，25-35 天不可行。
+- 根因：multiprocessing fork 继承父进程已初始化的 OpenBLAS 线程池（128 线程/进程），`OPENBLAS_NUM_THREADS=1` 环境变量在 fork 前设置但对已初始化的池无效。
+- 修复：`_run_one` worker 内用 `threadpoolctl.threadpool_limits(1)`（运行时生效，fork 后可用）；提交 b768f92。
+- 结果：停掉超订作业（kill + pkill 清理 60 worker），重启（pid 4169162）；验证多数 worker 1 线程；嵌套阶段约 6h 后进入置换，届时验证速率。
+- 证据：监控代理报告 + 本记录。
