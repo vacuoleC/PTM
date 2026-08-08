@@ -30,8 +30,8 @@ from sklearn.metrics import average_precision_score
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _prep(X, threshold):
-    """Detection filter + sort-trick median + standardize (f32)."""
+def _prep_fit(X, threshold):
+    """Fit preprocessing on training data: returns transformed X + stats for test."""
     a = X.to_numpy(dtype=np.float32)
     keep = np.mean(~np.isnan(a), axis=0) >= threshold
     a = a[:, keep]
@@ -41,6 +41,14 @@ def _prep(X, threshold):
     imp = np.where(np.isnan(a), med, a)
     mu = imp.mean(axis=0)
     sd = imp.std(axis=0) + 1e-8
+    return (imp - mu) / sd, (keep, med, mu, sd)
+
+
+def _prep_apply(X, stats):
+    """Apply training-fit stats to test data (same feature mask)."""
+    keep, med, mu, sd = stats
+    a = X.to_numpy(dtype=np.float32)[:, keep]
+    imp = np.where(np.isnan(a), med, a)
     return (imp - mu) / sd
 
 
@@ -94,8 +102,8 @@ def main(config_path: Path) -> None:
                 if len(row) == 0:
                     raise RuntimeError(f"no selected params for fold {fold}")
                 thr, C_val, l1r = float(row.iloc[0].threshold), float(row.iloc[0].C), float(row.iloc[0].l1_ratio)
-                Xt = _prep(X_frac, thr)
-                Xv = _prep(X.loc[te_ids], thr)
+                Xt, stats = _prep_fit(X_frac, thr)
+                Xv = _prep_apply(X.loc[te_ids], stats)
                 p = _fit_cuml(Xt, y_frac.to_numpy(), Xv, C_val, l1r)
                 records.extend({"fold": fold, "patient_id": pid, "target": int(labels.loc[pid]), "score": s}
                                for pid, s in zip(te_ids, p))
