@@ -7,9 +7,15 @@ outer-fold OOF prediction. No learned state leaks between permutations.
 """
 from __future__ import annotations
 
+# CRITICAL: must be set BEFORE any numpy/sklearn import — OpenBLAS reads
+# the thread count when numpy loads, so env vars set after import are too
+# late and every worker inherits a 128-thread pool from the parent.
+import os
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import argparse
 import multiprocessing as mp
-import os
 import time
 from pathlib import Path
 
@@ -17,9 +23,6 @@ import numpy as np
 import pandas as pd
 import yaml
 from sklearn.metrics import average_precision_score
-
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
 
 from nested_pca_elasticnet import nested_oof, parameter_grid
 
