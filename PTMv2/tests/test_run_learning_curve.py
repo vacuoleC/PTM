@@ -29,7 +29,8 @@ class LearningCurveTests(unittest.TestCase):
 
     def test_select_parameters_returns_candidate(self):
         best, score = _select_parameters(self.X, self.y, self.candidates, 2, 0)
-        self.assertIn("n_components", str(best))
+        self.assertEqual(len(best), 4)  # (threshold, n_comp, C, l1)
+        self.assertEqual(best[1], 3)    # n_components from grid
         self.assertGreaterEqual(score, 0.0)
 
     def test_cell_produces_auprc(self):
