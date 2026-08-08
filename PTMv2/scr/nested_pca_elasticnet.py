@@ -31,6 +31,11 @@ _WORKER_STATE: tuple | None = None
 def _init_worker(X, y, assignments, candidates, inner_splits, random_seed):
     global _WORKER_STATE
     _WORKER_STATE = (X, y, assignments, candidates, inner_splits, random_seed)
+    # Pin BLAS to one thread for the whole worker lifetime (survives fork,
+    # unlike pre-fork env vars). Applied in the initializer so every fold
+    # executed in this process stays single-threaded.
+    from threadpoolctl import threadpool_limits
+    threadpool_limits(limits=1, user_api="blas").__enter__()
 
 
 def parameter_grid(thresholds, components, cs, l1_ratios):
@@ -40,40 +45,37 @@ def parameter_grid(thresholds, components, cs, l1_ratios):
 
 def _run_fold(fold: int) -> tuple[list[dict], dict]:
     """Run one outer fold: inner selection then outer OOF prediction."""
-    from threadpoolctl import threadpool_limits
+    X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
+    train_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "train"), "patient_id"]
+    test_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "test"), "patient_id"]
+    X_tr, y_tr = X.loc[train_ids], y.loc[train_ids]
+    X_te = X.loc[test_ids]
 
-    with threadpool_limits(limits=1, user_api="blas"):
-        X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
-        train_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "train"), "patient_id"]
-        test_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "test"), "patient_id"]
-        X_tr, y_tr = X.loc[train_ids], y.loc[train_ids]
-        X_te = X.loc[test_ids]
+    # Inner selection on the training fold
+    cv = StratifiedKFold(n_splits=inner_splits, shuffle=True, random_state=random_seed + int(fold))
+    best, best_score = None, -1.0
+    for threshold, n_comp, C_val, l1 in candidates:
+        fold_scores = []
+        for ti, vi in cv.split(X_tr, y_tr):
+            p = fit_score_fold_pca(
+                X_tr.iloc[ti], y_tr.iloc[ti], X_tr.iloc[vi], threshold, n_comp, C_val, l1,
+            )
+            fold_scores.append(average_precision_score(y_tr.iloc[vi], p))
+        sc = float(np.mean(fold_scores))
+        if sc > best_score:
+            best_score, best = sc, (threshold, n_comp, C_val, l1)
 
-        # Inner selection on the training fold
-        cv = StratifiedKFold(n_splits=inner_splits, shuffle=True, random_state=random_seed + int(fold))
-        best, best_score = None, -1.0
-        for threshold, n_comp, C_val, l1 in candidates:
-            fold_scores = []
-            for ti, vi in cv.split(X_tr, y_tr):
-                p = fit_score_fold_pca(
-                    X_tr.iloc[ti], y_tr.iloc[ti], X_tr.iloc[vi], threshold, n_comp, C_val, l1,
-                )
-                fold_scores.append(average_precision_score(y_tr.iloc[vi], p))
-            sc = float(np.mean(fold_scores))
-            if sc > best_score:
-                best_score, best = sc, (threshold, n_comp, C_val, l1)
-
-        scores = fit_score_fold_pca(X_tr, y_tr, X_te, *best)
-        records = [
-            {"fold": fold, "patient_id": patient, "target": int(y.loc[patient]), "score": score}
-            for patient, score in zip(test_ids, scores)
-        ]
-        selected = {
-            "fold": fold,
-            "threshold": best[0], "n_components": best[1],
-            "C": best[2], "l1_ratio": best[3], "inner_ap": best_score,
-        }
-        return records, selected
+    scores = fit_score_fold_pca(X_tr, y_tr, X_te, *best)
+    records = [
+        {"fold": fold, "patient_id": patient, "target": int(y.loc[patient]), "score": score}
+        for patient, score in zip(test_ids, scores)
+    ]
+    selected = {
+        "fold": fold,
+        "threshold": best[0], "n_components": best[1],
+        "C": best[2], "l1_ratio": best[3], "inner_ap": best_score,
+    }
+    return records, selected
 
 
 def nested_oof(X, y, assignments, candidates, inner_splits, random_seed, n_jobs: int = 1):
