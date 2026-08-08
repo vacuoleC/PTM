@@ -38,10 +38,23 @@ def _init_worker(X, y, assignments, candidates, inner_splits, random_seed):
 
 
 def _select_parameters(X, y, candidates, inner_splits, random_state):
-    """Inner selection on a training subset, returns best candidate."""
+    """Inner selection on a training subset, returns best candidate.
+
+    PCA components are clipped to min(component, n_samples - 1) because
+    PCA cannot exceed the number of samples — a mathematical constraint,
+    not a design choice. This keeps the frozen component grid [10, 20, 40]
+    intact for fractions where it is feasible.
+    """
+    n_samples = X.shape[0]
+    max_comp = max(1, n_samples - 1)
+    feasible = [
+        (threshold, min(n_comp, max_comp), C_val, l1)
+        for threshold, n_comp, C_val, l1 in candidates
+    ]
+    feasible = list(dict.fromkeys(feasible))
     cv = StratifiedKFold(n_splits=inner_splits, shuffle=True, random_state=random_state)
     best, best_score = None, -1.0
-    for threshold, n_comp, C_val, l1 in candidates:
+    for threshold, n_comp, C_val, l1 in feasible:
         fold_scores = []
         for ti, vi in cv.split(X, y):
             p = fit_score_fold_pca(
