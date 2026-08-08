@@ -140,10 +140,11 @@ def main(config_path: Path, n_permutations: int, n_jobs: int, checkpoint: Path |
         pca_model["pca_components"],
         pca_model["classifier"]["C"], pca_model["classifier"]["l1_ratio"],
     )
-    print(f"running observed nested OOF (serial, pca_elastic_net)...", flush=True)
+    print(f"running observed nested OOF (fold-parallel, pca_elastic_net)...", flush=True)
     observed_oof, _ = nested_oof(
         X, labels, assignments, candidates,
         study["evaluation"]["inner_cv"]["splits"], study["evaluation"]["random_seed"],
+        n_jobs=n_jobs,
     )
     print("observed done; starting permutations", flush=True)
     null_df, observed_auprc, p_value = run_permutation_null(

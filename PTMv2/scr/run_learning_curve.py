@@ -69,34 +69,37 @@ def _select_parameters(X, y, candidates, inner_splits, random_state):
 
 def _run_cell(args):
     """One (fraction, repeat) cell across all 50 outer folds."""
-    fraction, repeat = args
-    X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
-    rng = np.random.default_rng(random_seed + repeat * 131 + int(fraction * 100))
-    records = []
-    for fold in sorted(assignments.fold.unique()):
-        train_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "train"), "patient_id"]
-        test_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "test"), "patient_id"]
-        # Patient-level stratified subsample of the training fold
-        y_train = y.loc[train_ids]
-        pos = y_train[y_train == 1].index.to_numpy()
-        neg = y_train[y_train == 0].index.to_numpy()
-        n_pos = max(1, int(len(pos) * fraction))
-        n_neg = max(1, int(len(neg) * fraction))
-        keep = np.concatenate([
-            rng.choice(pos, size=n_pos, replace=False),
-            rng.choice(neg, size=n_neg, replace=False),
-        ])
-        X_frac = X.loc[keep]
-        y_frac = y.loc[keep]
-        best, _ = _select_parameters(X_frac, y_frac, candidates, inner_splits, random_seed + int(fold))
-        p = fit_score_fold_pca(X_frac, y_frac, X.loc[test_ids], *best)
-        records.extend(
-            {"fold": fold, "patient_id": pid, "target": int(y.loc[pid]), "score": s}
-            for pid, s in zip(test_ids, p)
-        )
-    oof = pd.DataFrame(records)
-    auprc = float(average_precision_score(oof.target, oof.score))
-    return {"fraction": fraction, "repeat": repeat, "n_train_patients": len(keep), "oof_auprc": round(auprc, 6)}
+    from threadpoolctl import threadpool_limits
+
+    with threadpool_limits(limits=1, user_api="blas"):
+        fraction, repeat = args
+        X, y, assignments, candidates, inner_splits, random_seed = _WORKER_STATE
+        rng = np.random.default_rng(random_seed + repeat * 131 + int(fraction * 100))
+        records = []
+        for fold in sorted(assignments.fold.unique()):
+            train_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "train"), "patient_id"]
+            test_ids = assignments.loc[(assignments.fold == fold) & (assignments.role == "test"), "patient_id"]
+            # Patient-level stratified subsample of the training fold
+            y_train = y.loc[train_ids]
+            pos = y_train[y_train == 1].index.to_numpy()
+            neg = y_train[y_train == 0].index.to_numpy()
+            n_pos = max(1, int(len(pos) * fraction))
+            n_neg = max(1, int(len(neg) * fraction))
+            keep = np.concatenate([
+                rng.choice(pos, size=n_pos, replace=False),
+                rng.choice(neg, size=n_neg, replace=False),
+            ])
+            X_frac = X.loc[keep]
+            y_frac = y.loc[keep]
+            best, _ = _select_parameters(X_frac, y_frac, candidates, inner_splits, random_seed + int(fold))
+            p = fit_score_fold_pca(X_frac, y_frac, X.loc[test_ids], *best)
+            records.extend(
+                {"fold": fold, "patient_id": pid, "target": int(y.loc[pid]), "score": s}
+                for pid, s in zip(test_ids, p)
+            )
+        oof = pd.DataFrame(records)
+        auprc = float(average_precision_score(oof.target, oof.score))
+        return {"fraction": fraction, "repeat": repeat, "n_train_patients": len(keep), "oof_auprc": round(auprc, 6)}
 
 
 def main(config_path: Path, n_jobs: int) -> None:
