@@ -271,6 +271,12 @@ def main():
         all_p, all_y = [], []
         t_perm = time.monotonic()
         for fold in folds:
+            # Inner-split arrays are keyed by the permutation-specific splits
+            # (random_state = 0 + perm_index + fold), so they can never be reused
+            # across permutations. Without clearing, both dicts grow monotonically
+            # (~12 GB per permutation on 50 folds) and OOM the cgroup.
+            cache.clear()
+            inner_arrays.clear()
             if args.mode == "fixed":
                 p, dt = run_fixed_fold(X_np, y_perm, fold_meta, fold, fixed_params, cache)
             else:
